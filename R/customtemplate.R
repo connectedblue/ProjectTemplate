@@ -27,6 +27,35 @@
 # allows more fine grained control than just plain copy-and-overwrite.  For example, it
 # can be specifed for a .gitignore segment on a template to be appended to an existing
 # .gitignore in the target project template directory.
+#
+# Template definitions are stored in a DCF format file, and loaded into a dataframe for 
+# processing.  There can be multiple DCF records defined in a single file.  Each record
+# has the following fields:
+#      location:        where template content can be found
+#      type:            whether the template is stored local or on github
+#      merge:           overwrite/append/duplicate determines how content is handled
+#                       when an item with similar name exists in the target project
+#
+# Root template definition file uses this format with some restrictions:  
+#       location:  If the first record has this field set to NULL, this means that
+#                  templates are not configured for this installation.  Otherwise, it
+#                  points to the location where template names are defined
+#                  are defined, as sub directories.
+#       merge:     not used
+# The file is stored in the ProjectTemplate package under the inst/defaults directory
+# and is named RootConfig.dcf.  A backup is kept in the etc folder of the R installation.
+# This is used to restore configuration if a new version of ProjectTemplate has been 
+# installed and the RootConfig.dcf got written over.
+#
+# General template definition files reside directly under the template subdirectory
+# with the name template-definition.dcf.  If this file exists, it is used to build the
+# template structure.  If not, any files or folders are copied directly (with over-write)
+# to the target project directory.  Note that General template definition files can have
+# multiple records - each separated by a newline in the standard dcf manner.
+
+#
+# Custom template functions start here .....
+#
 
 # First, Some short cut definitions to aid readability
 

@@ -1,2 +1,3 @@
-location:  NULL
-type:     local
+location:       NULL
+type:           local
+merge:          NULL
