@@ -4,7 +4,7 @@
 
 # Custom templates can be configured for each different installation of ProjectTemplate
 # There can be multiple templates, and one of them is a default.  They are invoked by
-#     create.project("project-name", "template name")
+#     create.project("project-name", "template-name")
 # or
 #     create.project("project-name") to invoke the default template
 #
@@ -14,8 +14,19 @@
 #
 # The location of the templates is a single location on the local file system or github.
 # This is called the root template location.  Each sub directory under the root 
-# location is the template-name used in the call to create.project.
+# location is the template-name used in the call to create.project().
 #
+# A user function configure.templates() provides a management interface to manage the
+# installed templates on a system.
+#
+# Template designers can simply create directory structures for any functionality they 
+# want to, e.g. knitr templates, shinyapps, corporate analysis standards etc.
+# There is an advanced template design feature, whereby the template is described in
+# a template definition file.  This allows for re-use of functionalility between templates
+# (e.g. a lib function that you'd like to make available in many templates).  It also
+# allows more fine grained control than just plain copy-and-overwrite.  For example, it
+# can be specifed for a .gitignore segment on a template to be appended to an existing
+# .gitignore in the target project template directory.
 
 # First, Some short cut definitions to aid readability
 
@@ -33,17 +44,7 @@
 # Helper function to remove the first item in a list
 .remove.first <- function (x) rev(head(rev(x), -1))
 
-# Read a template definition file and return the contents as a dataframe
-.read.template.definition <- function (template.file=.get.root.location()) {
-        definition <- as.data.frame(read.dcf(template.file), 
-                                    stringsAsFactors = FALSE)
-        invalid_types <- setdiff(definition$type, .available.location.types)
-        if(length(invalid_types)>0) {
-                stop(paste0("Invalid template types in ", template.file, ": ", invalid_types))
-        }
-        definition
-}
-
+# Set a new location for the root template for the current ProjectTemplate installation
 .set.root.location <- function (location, type) {
         if (!(type %in% .available.types)) {
                 message(paste0("Invalid type: ", type))
@@ -65,15 +66,27 @@
         write.dcf(location, .root.templatebackup.file)
 }
 
+# Get the currently configured root template location
 .get.root.location <- function () {
-        location <- .get.template.locations(.root.template.file)
+        location <- .read.template.definition(.root.template.file)
         location <- location[1,]
         if(location$location == "NULL") return (NULL)
         location
 }
 
+# Read a template definition file and return the contents as a dataframe
+.read.template.definition <- function (template.file) {
+        definition <- as.data.frame(read.dcf(template.file), 
+                                    stringsAsFactors = FALSE)
+        invalid_types <- setdiff(definition$type, .available.location.types)
+        if(length(invalid_types)>0) {
+                stop(paste0("Invalid template types in ", template.file, ": ", invalid_types))
+        }
+        definition
+}
 
-.read.template.info <- function () {
+# Extract info about the root template file 
+.extract.roottemplate.info <- function () {
         template.root <- .get.root.location()
         if (is.null(template.root)) return(NULL)
         
@@ -105,13 +118,14 @@
         template.info
 }
 
-.template.status <- function () {
+# Provide the status of templates defined under the template root
+.root.template.status <- function () {
         template.info <- .get.template.names()
         if (is.null(template.info)) {
                 message <- paste0(c("Custom Templates not configured for this installation.",
                                     "Run configure.template() to set up where ProjectTemplate should look for your custom templates"),
-                                  collapse = "\n"))
-root <- "no_root"
+                                  collapse = "\n")
+#root <- "no_root"
         }
         else if (nrow(template.info)==0) {
                 return(
