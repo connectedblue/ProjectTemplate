@@ -30,16 +30,33 @@
 #
 # Template definitions are stored in a DCF format file, and loaded into a dataframe for 
 # processing.  There can be multiple DCF records defined in a single file.  Each record
-# has the following fields:
-#      location:        where template content can be found
-#      type:            whether the template is stored local or on github
-#      merge:           overwrite/append/duplicate determines how content is handled
-#                       when an item with similar name exists in the target project
+# can the following fields (depending on template_type):
 #
+#
+#      template_type:           type of template definition:
+#                                       root - template root file for a site installation
+#                                       project - templates for create.project()
+#
+#      content_location:        where template content can be found:
+#                                       local:/path/to/content/dir.or.file
+#                                       github:username/repo@branch:/path/to/content.or.file
+#
+#
+#      merge:                   determines how file content is handled when it clashes with
+#                               files of the same name in the target project:
+#                                       overwrite/append/duplicate 
+#
+#      template_name:           Name of template that the content relates to
+#
+#      target_path:             path relative to project where content is placed 
+#                               default is .
+#
+#       default:                whether this record is the default template
+
 # Root template definition file uses this format with some restrictions:  
 #       location:  If the first record has this field set to NULL, this means that
 #                  templates are not configured for this installation.  Otherwise, it
-#                  points to the location where template names are defined
+#                  points to directory of template content. The basename of the 
 #                  are defined, as sub directories.
 #       merge:     not used
 # The file is stored in the ProjectTemplate package under the inst/defaults directory
