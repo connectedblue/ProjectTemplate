@@ -4,12 +4,26 @@
 \alias{cache}
 \title{Cache a data set for faster loading.}
 \usage{
+<<<<<<< HEAD
 cache(variable, ...)
+=======
+cache(variable = NULL, CODE = NULL, depends = NULL, ...)
+>>>>>>> fastcache
 }
 \arguments{
-\item{variable}{A character vector containing the name of the variable to
-be saved.}
+\item{variable}{A character string containing the name of the variable to
+be saved.  If the CODE parameter is defined, it is evaluated and saved, otherwise
+the variable with that name in the global environment is used.}
 
+<<<<<<< HEAD
+=======
+\item{CODE}{A sequence of R statements enclosed in \code{\{..\}} which produce the object to be
+cached.}
+
+\item{depends}{A character vector of other global environment objects that the CODE
+depends upon. Caching will be forced if those objects have changed since last caching}
+
+>>>>>>> fastcache
 \item{...}{additional arguments passed to \code{\link{save}}}
 }
 \value{
@@ -21,6 +35,19 @@ directory. This cached copy of the data set will then be given precedence
 at load time when calling \code{\link{load.project}}. Cached data sets are
 stored as \code{.RData} files.
 }
+<<<<<<< HEAD
+=======
+\details{
+Usually you will want to cache datasets during munging.  This can be the raw
+data just loaded, or it can be the result of further processing during munge.  Either
+way, it can take a while to cache large variables, so cache will only cache when it
+needs to.  
+The \code{clear.cache("variable")} command
+can be run to flush individual items from the cache.
+
+Calling \code{cache()} with no arguments returns the current status of the cache.
+}
+>>>>>>> fastcache
 \examples{
 library('ProjectTemplate')
 \dontrun{create.project('tmp-project')

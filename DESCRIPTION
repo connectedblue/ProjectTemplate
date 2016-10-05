@@ -29,6 +29,8 @@ Suggests:
     foreign,
     reshape,
     plyr,
+    digest,
+    formatR,
     stringr,
     ggplot2,
     lubridate,
