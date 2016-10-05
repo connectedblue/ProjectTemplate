@@ -4,12 +4,6 @@
 #' directory. This cached copy of the data set will then be given precedence
 #' at load time when calling \code{\link{load.project}}. Cached data sets are
 #' stored as \code{.RData} files.
-<<<<<<< HEAD
-#'
-#' @param variable A character vector containing the name of the variable to
-#'  be saved.
-#'
-=======
 #' 
 #' Usually you will want to cache datasets during munging.  This can be the raw
 #' data just loaded, or it can be the result of further processing during munge.  Either
@@ -27,7 +21,6 @@
 #' cached.  
 #' @param depends A character vector of other global environment objects that the CODE
 #' depends upon. Caching will be forced if those objects have changed since last caching
->>>>>>> fastcache
 #' @param ... additional arguments passed to \code{\link{save}}
 #'
 #' @return No value is returned; this function is called for its side effects.
@@ -44,23 +37,12 @@
 #'
 #' setwd('..')
 #' unlink('tmp-project')}
-<<<<<<< HEAD
-cache <- function(variable, ...)
-=======
 cache <- function(variable=NULL, CODE=NULL, depends=NULL,  ...)
->>>>>>> fastcache
 {
   if (is.null(variable)) return(.cache.status())
         
   stopifnot(length(variable) == 1)
-<<<<<<< HEAD
-  save(list = variable,
-       envir = .TargetEnv,
-       file = file.path('cache', paste0(variable, '.RData')),
-       ...)
-}
-=======
-  
+
   CODE <- paste0(deparse(substitute(CODE)), collapse ="\n")
   if (CODE=="NULL") CODE <- NULL
   
@@ -307,5 +289,3 @@ cache <- function(variable=NULL, CODE=NULL, depends=NULL,  ...)
         # and return the variable names
         unique(sub("^(.*)\\..*$", "\\1", cache_files))
 }
-
->>>>>>> fastcache
