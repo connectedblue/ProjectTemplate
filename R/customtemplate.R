@@ -39,7 +39,7 @@
 #
 #      content_location:        where template content can be found:
 #                                       local:/path/to/content/dir.or.file
-#                                       github:username/repo@branch:/path/to/content.or.file
+#                                       github:username/repo@branch:path/to/content.or.file
 #
 #
 #      merge:                   determines how file content is handled when it clashes with
@@ -48,18 +48,20 @@
 #
 #      template_name:           Name of template that the content relates to
 #
-#      target_path:             path relative to project where content is placed 
-#                               default is .
+#      target_dir:              directory relative to project where content is placed 
 #
 #       default:                whether this record is the default template
+#
+
 
 # Root template definition file uses this format with some restrictions:  
-#       location:  If the first record has this field set to NULL, this means that
-#                  templates are not configured for this installation.  Otherwise, it
-#                  points to directory of template content. The basename of the 
-#                  are defined, as sub directories.
+# content_location:  If the first record has this field set to NULL, this means that
+#                  templates are not configured for this installation. 
 #       merge:     not used
-# The file is stored in the ProjectTemplate package under the inst/defaults directory
+# target_dir:      not used
+#
+# The file is stored in the ProjectTemplate package under the directory:
+#           inst/defaults/customtemplates 
 # and is named RootConfig.dcf.  A backup is kept in the etc folder of the R installation.
 # This is used to restore configuration if a new version of ProjectTemplate has been 
 # installed and the RootConfig.dcf got written over.
@@ -67,8 +69,7 @@
 # General template definition files reside directly under the template subdirectory
 # with the name template-definition.dcf.  If this file exists, it is used to build the
 # template structure.  If not, any files or folders are copied directly (with over-write)
-# to the target project directory.  Note that General template definition files can have
-# multiple records - each separated by a newline in the standard dcf manner.
+# to the target project directory.  
 
 #
 # Custom template functions start here .....
@@ -84,11 +85,35 @@
 .root.templatebackup.dir <- file.path(R.home(), "etc")
 .root.templatebackup.file <- file.path(.root.templatebackup.dir, "ProjectTemplateRootConfig.dcf")
 
-# allow templates to be defined in the local filesystem, or on github
-.available.location.types <- c("local", "github")
+# Types of template configuration allowed
+.available.template.types <- c("root", "project")
+
 
 # Helper function to remove the first item in a list
 .remove.first <- function (x) rev(head(rev(x), -1))
+
+# take a template definition dataframe, parse the content_location field into
+# the valid components and return the definition frame with the new columns
+.parse.content.location <- function(definition) {
+        
+        # Parse the content_location field to extract the embedded information
+        content_location <- strsplit(definition$content_location, ":")
+        
+        location_type <- sapply(content_location, function (x) x[1])
+        file_location <- sapply(content_location, function (x) x[3])
+        github_repo <- sapply(content_location, function (x) x[2])
+        
+        # Validate the location_type
+        valid_locations <- c("local", "github")        
+        invalid_types <- setdiff(location_type, valid_locations)
+        if(length(invalid_types)>0) {
+                stop(paste0("Invalid location types: ", invalid_types))
+        }
+        definition <- cbind(definition, data.frame(location_type=location_type,
+                                                   file_location=file_location,
+                                                   github_repo=github_repo) )
+        definition
+}
 
 # Set a new location for the root template for the current ProjectTemplate installation
 .set.root.location <- function (location, type) {
@@ -124,7 +149,7 @@
 .read.template.definition <- function (template.file) {
         definition <- as.data.frame(read.dcf(template.file), 
                                     stringsAsFactors = FALSE)
-        invalid_types <- setdiff(definition$type, .available.location.types)
+        invalid_types <- setdiff(definition$template_type, .available.template.types)
         if(length(invalid_types)>0) {
                 stop(paste0("Invalid template types in ", template.file, ": ", invalid_types))
         }
