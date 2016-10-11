@@ -87,10 +87,14 @@
 
 # Types of template configuration allowed
 .available.template.types <- c("root", "project")
+.template.field.names <- c("template_type", "content_location","merge",
+                           "template_name", "target_dir", "default")
+.template.merge.types <- c("overwrite", "append", "duplicate")
 
 
 # Helper function to remove the first item in a list
 .remove.first <- function (x) rev(head(rev(x), -1))
+
 
 # take a template definition dataframe, parse the content_location field into
 # the valid components and return the definition frame with the new columns
@@ -112,6 +116,59 @@
         definition <- cbind(definition, data.frame(location_type=location_type,
                                                    file_location=file_location,
                                                    github_repo=github_repo) )
+        definition
+}
+
+# enforce some rules about templates:
+#       check field names are correct
+#       template_type of right format
+#       merge types of the right format
+#       content_location in the correct format
+# stop if any validation breaks
+
+.validate.template.definition <- function(definition) {
+        
+        # All fields should be present, and no additional ones
+        invalid_names <- setdiff(names(definition),.template.field.names)
+        if (length(invalid_names) != 0) {
+                stop(paste0("Invalid template field names: ", invalid_names, "\n"))
+        }
+        missing_names <- setdiff(.template.field.names, names(definition))
+        if (length(missing_names) != 0) {
+                stop(paste0("Missing template field name: ", missing_names, "\n"))
+        }
+        
+        # Check that the template type field is valid
+        invalid_types <- setdiff(definition$template_type, .available.template.types)
+        if(length(invalid_types)>0) {
+                stop(paste0("Invalid template type: ", invalid_types, "\n"))
+        }
+        
+        # Make sure merge types are valid
+        invalid_mergetypes <- setdiff(definition$merge,.template.merge.types)
+        if (length(invalid_mergetypes) != 0) {
+                stop(paste0("Invalid values found in merge field: ", invalid_mergetypes))
+        }
+        
+        # Parse the content_location field to extract the embedded information
+        definition <- .parse.content.location(definition)
+        
+        definition
+}
+
+# Check the root template has the right format
+
+.validate.root.template <- function(definition) {
+        
+        # Make sure only root items are included in the definition
+        definition <- definition[definition$template_type == "root",]
+        
+        # Make the first item a default if another one isn't, or if there are more
+        # than one default
+        if (sum(definition$default) != 1) {
+                definition$default <- c(TRUE, rep(FALSE, length(definition$default)-1))
+        }
+        
         definition
 }
 
@@ -145,16 +202,31 @@
         location
 }
 
-# Read a template definition file and return the contents as a dataframe
+# Read a template definition file, validate it and return the contents as a dataframe
 .read.template.definition <- function (template.file) {
         definition <- as.data.frame(read.dcf(template.file), 
                                     stringsAsFactors = FALSE)
-        invalid_types <- setdiff(definition$template_type, .available.template.types)
-        if(length(invalid_types)>0) {
-                stop(paste0("Invalid template types in ", template.file, ": ", invalid_types))
-        }
+        definition$default <- as.logical(definition$default)
+        
+        definition <- .validate.template.definition(definition)
+        
         definition
 }
+
+# Read a template definition file, validate it and return the contents as a dataframe
+.read.root.template <- function (template.file) {
+        # read the file and perform basic validation
+        definition <- .read.template.definition(template.file)
+        
+        # apply additional checks for root template files
+        definition <- .validate.root.template(definition)
+        
+        definition
+}
+
+
+
+
 
 # Extract info about the root template file 
 .extract.roottemplate.info <- function () {
@@ -218,5 +290,41 @@
 }
 
 .download.github <- function (location) {
-        stop(".download.github not implemented")
+        #.require.package(devtools)
+        library(devtools)
+        gh_remote <- devtools:::github_remote(location)
+        file_location <- devtools:::remote_download.github_remote(gh_remote)
+        file_location
+}
+
+
+#
+# This function is cut and pasted from devtools.  It would be better if it were
+# exported from that package to allow it to be called from this package
+# A request has been raised against that package to add this function to be 
+# exported - when it is, this function can be deleted
+#
+github_remote <- function(repo, username = NULL, ref = NULL, subdir = NULL,
+                          auth_token = github_pat(), sha = NULL,
+                          host = "https://api.github.com") {
+        
+        meta <- devtools:::parse_git_repo(repo)
+        meta <- devtools:::github_resolve_ref(meta$ref %||% ref, meta)
+        
+        if (is.null(meta$username)) {
+                meta$username <- username %||% getOption("github.user") %||%
+                        stop("Unknown username.")
+                warning("Username parameter is deprecated. Please use ",
+                        username, "/", repo, call. = FALSE)
+        }
+        
+        devtools::remote("github",
+               host = host,
+               repo = meta$repo,
+               subdir = meta$subdir %||% subdir,
+               username = meta$username,
+               ref = meta$ref,
+               sha = sha,
+               auth_token = auth_token
+        )
 }

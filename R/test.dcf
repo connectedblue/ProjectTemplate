@@ -1,20 +1,20 @@
 template_type: root
 content_location: local::/Users/cs/git/customtemplates/knitr
-merge:  NULL
+merge:  overwrite
 template_name: knitr
 target_dir:  NULL
 default:  FALSE
 
 template_type: root
 content_location: local::/Users/cs/git/customtemplates/shinyapps
-merge:  NULL
+merge:  overwrite
 template_name: Shiny Apps
 target_dir:  NULL
 default:  FALSE
 
 template_type: root
 content_location: local::/Users/cs/git/customtemplates/standard
-merge:  NULL
+merge:  overwrite
 template_name: Standard templates for projects
 target_dir:  NULL
 default:  FALSE
@@ -22,7 +22,7 @@ default:  FALSE
 
 template_type: root
 content_location: github:connectedblue/templates:customtemplates/standard
-merge:  NULL
+merge:  overwrite
 template_name: Standard templates for projects
 target_dir:  NULL
 default:  FALSE
