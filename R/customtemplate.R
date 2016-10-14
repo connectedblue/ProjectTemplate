@@ -55,8 +55,7 @@
 
 
 # Root template definition file uses this format with some restrictions:  
-# content_location:  If the first record has this field set to NULL, this means that
-#                  templates are not configured for this installation. 
+#  if the field no_templates_defined: is present, the template definition is not defined
 #       merge:     not used
 # target_dir:      not used
 #
@@ -77,19 +76,18 @@
 
 # First, Some short cut definitions to aid readability
 
-# Where is the root template location defined
-.root.template.dir <- file.path(.libPaths(), "ProjectTemplate", "defaults", "customtemplate")
-.root.template.file <- file.path(.root.template.dir, "RootConfig.dcf")
-
-# A backup is needed otherwise it will be overwritten when ProjectTemplate is updated 
-.root.templatebackup.dir <- file.path(R.home(), "etc")
-.root.templatebackup.file <- file.path(.root.templatebackup.dir, "ProjectTemplateRootConfig.dcf")
+# Where is the root template location defined - put in the R/etc folder to preserve config
+# between installs of ProjectTemplate
+.root.template.dir <- file.path(R.home(), "etc")
+.root.template.file <- file.path(.root.template.dir, "ProjectTemplateRootConfig.dcf")
 
 # Types of template configuration allowed
 .available.template.types <- c("root", "project")
-.template.field.names <- c("template_type", "content_location","merge",
-                           "template_name", "target_dir", "default")
+.template.field.names <- c("template_type", "content_location", "template_name")
+.root.template.field.names <- c("target_dir", "default")
+.project.template.field.names <- c("merge", "target_dir")
 .template.merge.types <- c("overwrite", "append", "duplicate")
+.no.templates <- "no_templates_defined"
 
 
 # Helper function to remove the first item in a list
@@ -119,23 +117,18 @@
         definition
 }
 
-# enforce some rules about templates:
+# enforce some rules about all template types:
 #       check field names are correct
 #       template_type of right format
 #       merge types of the right format
 #       content_location in the correct format
 # stop if any validation breaks
-
 .validate.template.definition <- function(definition) {
         
-        # All fields should be present, and no additional ones
-        invalid_names <- setdiff(names(definition),.template.field.names)
-        if (length(invalid_names) != 0) {
-                stop(paste0("Invalid template field names: ", invalid_names, "\n"))
-        }
+        # Mandatory fields should be present
         missing_names <- setdiff(.template.field.names, names(definition))
         if (length(missing_names) != 0) {
-                stop(paste0("Missing template field name: ", missing_names, "\n"))
+                stop(paste0("Missing template field: ", missing_names, "\n"))
         }
         
         # Check that the template type field is valid
@@ -157,11 +150,19 @@
 }
 
 # Check the root template has the right format
-
 .validate.root.template <- function(definition) {
         
         # Make sure only root items are included in the definition
         definition <- definition[definition$template_type == "root",]
+        
+        # Mandatory fields for root templates should be present
+        missing_names <- setdiff(.root.template.field.names, names(definition))
+        if (length(missing_names) != 0) {
+                stop(paste0("Missing template field: ", missing_names, "\n"))
+        }
+        
+        # make the default column a logical value
+        definition$default <- as.logical(definition$default)
         
         # Make the first item a default if another one isn't, or if there are more
         # than one default
@@ -169,8 +170,76 @@
                 definition$default <- c(TRUE, rep(FALSE, length(definition$default)-1))
         }
         
+        # Make sure there are no duplicate template_name
+        duplicates <- definition$template_name[duplicated(definition$template_name)]
+        if (length(duplicates) > 0) {
+                stop(paste0("Duplicate template name found in template_name field: ", duplicates, "\n"))
+        }
+        
+        
         definition
 }
+
+# Read a template definition file, validate it and return the contents as a dataframe
+.read.template.definition <- function (template.file) {
+        definition <- as.data.frame(read.dcf(template.file), 
+                                    stringsAsFactors = FALSE)
+        
+        # return NULL if no templates defined
+        if (.no.templates %in% names(definition)) return(NULL)
+        
+        definition <- .validate.template.definition(definition)
+        
+        definition
+}
+
+# Read a template definition file, validate it and return the contents as a dataframe
+.read.root.template <- function () {
+        
+        .require.root.template()
+        
+        # read the file and perform basic validation
+        definition <- .read.template.definition(.root.template.file)
+        
+        # if no root template defined return false
+        if (is.null(definition)) return(definition)
+        
+        # apply additional checks for root template files
+        definition <- .validate.root.template(definition)
+        
+        # Save any validation fixes back
+        .save.root.template(definition)
+        
+        definition
+}
+
+# Save a validated template definition file as the root template
+.save.root.template <- function (definition) {
+        
+        root_template_fields <- c(.template.field.names, .root.template.field.names)
+        
+        # only save relevant columns from the definition
+        definition <- definition[,root_template_fields]
+        write.dcf(definition, .root.template.field.names)
+}
+
+# Clear all root template definitions
+.clear.root.template <- function () {
+        unlink(.root.template.file)
+        .require.root.template()
+}
+
+
+# Check if the root template file exists, if it doesn't create an empty one
+.require.root.template <- function() {
+        if(!file.exists(.root.template.file)) {
+                no_templates <- data.frame(x="")
+                colnames(no_templates) <- .no.templates
+                write.dcf(no_templates, .root.template.file)
+        }
+}
+
+
 
 # Set a new location for the root template for the current ProjectTemplate installation
 .set.root.location <- function (location, type) {
@@ -193,39 +262,6 @@
         if(!.is.dir(.root.templatebackup.dir)) dir.create(.root.templatebackup.dir)
         write.dcf(location, .root.templatebackup.file)
 }
-
-# Get the currently configured root template location
-.get.root.location <- function () {
-        location <- .read.template.definition(.root.template.file)
-        location <- location[1,]
-        if(location$location == "NULL") return (NULL)
-        location
-}
-
-# Read a template definition file, validate it and return the contents as a dataframe
-.read.template.definition <- function (template.file) {
-        definition <- as.data.frame(read.dcf(template.file), 
-                                    stringsAsFactors = FALSE)
-        definition$default <- as.logical(definition$default)
-        
-        definition <- .validate.template.definition(definition)
-        
-        definition
-}
-
-# Read a template definition file, validate it and return the contents as a dataframe
-.read.root.template <- function (template.file) {
-        # read the file and perform basic validation
-        definition <- .read.template.definition(template.file)
-        
-        # apply additional checks for root template files
-        definition <- .validate.root.template(definition)
-        
-        definition
-}
-
-
-
 
 
 # Extract info about the root template file 

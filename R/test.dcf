@@ -17,7 +17,7 @@ content_location: local::/Users/cs/git/customtemplates/standard
 merge:  overwrite
 template_name: Standard templates for projects
 target_dir:  NULL
-default:  FALSE
+default:  TRUE
 
 
 template_type: root
@@ -25,4 +25,4 @@ content_location: github:connectedblue/templates:customtemplates/standard
 merge:  overwrite
 template_name: Standard templates for projects
 target_dir:  NULL
-default:  FALSE
+default:  TRUE
