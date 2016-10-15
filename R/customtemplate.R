@@ -84,7 +84,7 @@
 # Types of template configuration allowed
 .available.template.types <- c("root", "project")
 .template.field.names <- c("template_type", "content_location", "template_name")
-.root.template.field.names <- c("target_dir", "default")
+.root.template.field.names <- c( "default")
 .project.template.field.names <- c("merge", "target_dir")
 .template.merge.types <- c("overwrite", "append", "duplicate")
 .no.templates <- "no_templates_defined"
@@ -176,6 +176,11 @@
                 stop(paste0("Duplicate template name found in template_name field: ", duplicates, "\n"))
         }
         
+        # Create a user friendly display name for the templates, numbering each one
+        # and marking the default with a (*)
+        definition$display_name <- paste0(row.names(definition), ".",
+                                          ifelse(definition$default, "(*) ", "    "),
+                                          definition$template_name)
         
         definition
 }
@@ -220,7 +225,7 @@
         
         # only save relevant columns from the definition
         definition <- definition[,root_template_fields]
-        write.dcf(definition, .root.template.field.names)
+        write.dcf(definition, .root.template.file)
 }
 
 # Clear all root template definitions
@@ -229,7 +234,6 @@
         .require.root.template()
 }
 
-
 # Check if the root template file exists, if it doesn't create an empty one
 .require.root.template <- function() {
         if(!file.exists(.root.template.file)) {
@@ -237,30 +241,6 @@
                 colnames(no_templates) <- .no.templates
                 write.dcf(no_templates, .root.template.file)
         }
-}
-
-
-
-# Set a new location for the root template for the current ProjectTemplate installation
-.set.root.location <- function (location, type) {
-        if (!(type %in% .available.types)) {
-                message(paste0("Invalid type: ", type))
-                return(invisible(NULL))
-        }
-        if (is.null(location)) {
-                location <- "NULL"
-        }
-        else if (!.is.dir(location)) {
-                message(paste0("Invalid template location: ", location))
-                return(invisible(NULL))
-        }
-        
-        location <- data.frame(location=location, type=type)
-        write.dcf(location, .root.template.file)
-        
-        # Create a backup of the root location
-        if(!.is.dir(.root.templatebackup.dir)) dir.create(.root.templatebackup.dir)
-        write.dcf(location, .root.templatebackup.file)
 }
 
 
@@ -297,29 +277,18 @@
         template.info
 }
 
-# Provide the status of templates defined under the template root
+# Provide the status of templates defined in the root template
 .root.template.status <- function () {
-        template.info <- .get.template.names()
-        if (is.null(template.info)) {
-                message <- paste0(c("Custom Templates not configured for this installation.",
-                                    "Run configure.template() to set up where ProjectTemplate should look for your custom templates"),
-                                  collapse = "\n")
-#root <- "no_root"
+        template.definition <- .read.root.template()
+        if (is.null(template.definition)) {
+                message(paste0(c("Custom Templates not configured for this installation."),
+                                  collapse = "\n"))
         }
-        else if (nrow(template.info)==0) {
-                return(
-                        message(paste0(c(paste0("No templates are located at ", .get.root.location()$location),
-                                         "Add sub directories there to start using custom templates"),
-                                       collapse = "\n"))
-                )
-        }
+        
         else {
-                templates <- ifelse(template.info$default, 
-                                    paste0("(*) ", template.info$clean.names),
-                                    paste0("    ", template.info$clean.names))
+                
                 message(paste0(c("The following templates are available:", 
-                                 templates,
-                                 "If no template specified in create.project(), the default (*) will be used"),
+                                 template.definition$display_name),
                                collapse = "\n"))
         }
         
