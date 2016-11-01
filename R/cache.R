@@ -42,11 +42,7 @@ cache <- function(variable=NULL, CODE=NULL, depends=NULL,  ...)
   if (is.null(variable)) return(.cache.status())
         
   stopifnot(length(variable) == 1)
-<<<<<<< HEAD
-
-=======
   
->>>>>>> migrateproject
   CODE <- paste0(deparse(substitute(CODE)), collapse ="\n")
   if (CODE=="NULL") CODE <- NULL
   
@@ -293,3 +289,4 @@ cache <- function(variable=NULL, CODE=NULL, depends=NULL,  ...)
         # and return the variable names
         unique(sub("^(.*)\\..*$", "\\1", cache_files))
 }
+
