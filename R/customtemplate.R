@@ -12,9 +12,12 @@
 # defined for each template name is copied into the standard structure, overwriting 
 # anything already there, and adding any new files.
 #
-# The location of the templates is a single location on the local file system or github.
-# This is called the root template location.  Each sub directory under the root 
-# location is the template-name used in the call to create.project().
+# The available templates for a site are defined in a file called the root template
+# file which is stored in the etc directory of the current R installation directory.  
+#
+# The etc location is chosed in order to preserve config
+# between updates to ProjectTemplate itself, but import and export functions are provided 
+# to allow config to be preserved between different versions of R.
 #
 # A user function configure.templates() provides a management interface to manage the
 # installed templates on a system.
@@ -35,7 +38,7 @@
 #
 #      template_type:           type of template definition:
 #                                       root - template root file for a site installation
-#                                       project - templates for create.project()
+#                                       project - individual template definition 
 #
 #      content_location:        where template content can be found:
 #                                       local:/path/to/content/dir.or.file
@@ -60,10 +63,8 @@
 # target_dir:      not used
 #
 # The file is stored in the ProjectTemplate package under the directory:
-#           inst/defaults/customtemplates 
-# and is named RootConfig.dcf.  A backup is kept in the etc folder of the R installation.
-# This is used to restore configuration if a new version of ProjectTemplate has been 
-# installed and the RootConfig.dcf got written over.
+#           {R Home}/etc 
+# and is named ProjectTemplateRootConfig.dcf.  
 #
 # General template definition files reside directly under the template subdirectory
 # with the name template-definition.dcf.  If this file exists, it is used to build the
@@ -199,14 +200,17 @@
 }
 
 # Read a template definition file, validate it and return the contents as a dataframe
-.read.root.template <- function () {
+# If no file parameter specified, the function reads the .root.template.file, otherwise
+# another dcf file can be specified which is validated and then saved in place of the
+# current .root.template.file
+.read.root.template <- function (template.file=.root.template.file) {
         
         .require.root.template()
         
         # read the file and perform basic validation
-        definition <- .read.template.definition(.root.template.file)
+        definition <- .read.template.definition(template.file)
         
-        # if no root template defined return false
+        # if no root template defined return NULL
         if (is.null(definition)) return(definition)
         
         # apply additional checks for root template files
@@ -244,38 +248,6 @@
 }
 
 
-# Extract info about the root template file 
-.extract.roottemplate.info <- function () {
-        template.root <- .get.root.location()
-        if (is.null(template.root)) return(NULL)
-        
-        # read raw template information
-        if (template.root$type == "github") {
-                templates <- .download.github(template.root$location)
-        }
-        else if (template.root$type == "local") {
-                templates <- template.root$location
-                sub.dirs <- list.dirs(templates)
-                template.names <- basename(.remove.first(sub.dirs))
-                template.info <- data.frame(
-                        clean.names = sub("(.*)_default$", "\\1", 
-                                          template.names),
-                        default = grepl("_default$", template.names),
-                        path = file.path(templates, template.names)
-                )        
-        }
-        else {
-                template.info <- NULL
-        }
-        if (nrow(template.info)>0){
-                # sort into order - default first
-                template.info <- template.info[with(template.info, 
-                                                    order(-default, clean.names)),]
-                # and make sure there is only one default
-                template.info$default <- c(TRUE, rep(FALSE, nrow(template.info)-1))
-        }
-        template.info
-}
 
 # Provide the status of templates defined in the root template
 .root.template.status <- function () {
@@ -293,6 +265,43 @@
         }
         
 }
+
+# apply the selected template to the specified directory
+.apply.template <- function(template_name, definition, target_location) {
+        template <- definition[definition$template_name==template_name,]
+        
+        if (nrow(template)!=1) {
+                stop(paste0("No sucn template: ", template_name, "\n"))
+        }
+        
+        # go get template from github if necessary
+        if (template$template_type=="github") {
+                template <- .download.github.template(template)
+        }
+        
+        file_location <- as.character(template$file_location)
+        # if the file_location is a directory, process it directly, otherwise process
+        # it as a custom project template definition file
+        if (dir.exists(file_location)) {
+                .add.from.directory.template(file_location, target_location)
+                message(paste0("Applied template: ", template$template_name, "\n"))
+        }
+        else if (file.exists(file_location)) {
+                .add.from.dcf.template(file_location, target_location)
+        }
+        else {
+                stop(paste0("Invalid Template location: ", file_location, "\n"))
+        }
+        
+}
+
+# Blindly copy files from this location into the new location
+.add.from.directory.template <- function(template_location, target_location) {
+        #template_files <- list.files(template_location, recursive = TRUE, full.names = TRUE, all.files = TRUE)
+        file.copy(template_location, target_location, overwrite = TRUE, recursive = TRUE, copy.mode = TRUE)
+
+}
+
 
 .download.github <- function (location) {
         #.require.package(devtools)
@@ -332,4 +341,38 @@ github_remote <- function(repo, username = NULL, ref = NULL, subdir = NULL,
                sha = sha,
                auth_token = auth_token
         )
+}
+
+
+# Extract info about the root template file 
+.extract.roottemplate.info <- function () {
+        template.root <- .get.root.location()
+        if (is.null(template.root)) return(NULL)
+        
+        # read raw template information
+        if (template.root$type == "github") {
+                templates <- .download.github(template.root$location)
+        }
+        else if (template.root$type == "local") {
+                templates <- template.root$location
+                sub.dirs <- list.dirs(templates)
+                template.names <- basename(.remove.first(sub.dirs))
+                template.info <- data.frame(
+                        clean.names = sub("(.*)_default$", "\\1", 
+                                          template.names),
+                        default = grepl("_default$", template.names),
+                        path = file.path(templates, template.names)
+                )        
+        }
+        else {
+                template.info <- NULL
+        }
+        if (nrow(template.info)>0){
+                # sort into order - default first
+                template.info <- template.info[with(template.info, 
+                                                    order(-default, clean.names)),]
+                # and make sure there is only one default
+                template.info$default <- c(TRUE, rep(FALSE, nrow(template.info)-1))
+        }
+        template.info
 }

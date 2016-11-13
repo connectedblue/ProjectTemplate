@@ -15,7 +15,7 @@ default:  FALSE
 template_type: root
 content_location: local::/Users/cs/git/customtemplates/standard
 merge:  overwrite
-template_name: Standard templates for projects
+template_name: Standardish templates for projects
 target_dir:  NULL
 default:  TRUE
 
