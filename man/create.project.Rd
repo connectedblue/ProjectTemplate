@@ -4,8 +4,9 @@
 \alias{create.project}
 \title{Create a new project.}
 \usage{
-create.project(project.name = "new-project", minimal = FALSE,
-  dump = FALSE, merge.strategy = c("require.empty", "allow.non.conflict"))
+create.project(project.name = NULL, template.name = .get.default.template(),
+  minimal = FALSE, dump = FALSE, merge.strategy = c("require.empty",
+  "allow.non.conflict"))
 }
 \arguments{
 \item{project.name}{A character vector containing the name for this new

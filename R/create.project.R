@@ -10,6 +10,9 @@
 #'
 #' @param project.name A character vector containing the name for this new
 #'   project. Must be a valid directory name for your file system.
+#' @param template.name A character string containing the name of the custom
+#'   template that should be applied after the base project has been created.  
+#'   The templates are installed using \code{\link{install.template}}.
 #' @param minimal A boolean value indicating whether to create a minimal
 #'   project or a full project. A minimal project contains only the
 #'   directories strictly necessary to use ProjectTemplate and does not
@@ -37,8 +40,12 @@
 #' @examples
 #' library('ProjectTemplate')
 #'
-#' \dontrun{create.project('MyProject')}
-create.project <- function(project.name = 'new-project', minimal = FALSE,
+#' \dontrun{
+#'     create.project('MyProject')
+#'     create.project('MyProject', 'my.knitr.template')
+#'     }
+create.project <- function(project.name = NULL, template.name = .get.default.template(), 
+                           minimal = FALSE,
                            dump = FALSE, merge.strategy = c("require.empty", "allow.non.conflict"))
 {
 
@@ -49,6 +56,11 @@ create.project <- function(project.name = 'new-project', minimal = FALSE,
                    "Please change to another directory and re-run create.project()"),
                    path=dirname(getwd()))
   
+  # Return list of installed templates if no project name passed
+  if (is.null(project.name)) {
+          .root.template.status()
+          .quietstop()
+  }
   
   if (minimal) {
     exclude <- c("diagnostics", "doc", "graphs", "lib", "logs", "profiling",
@@ -78,6 +90,10 @@ create.project <- function(project.name = 'new-project', minimal = FALSE,
       cat(deparse(get(item, envir = e, inherits = FALSE)),
           file = file.path(project.name, paste(item, '.R', sep = '')))
     }
+  }
+  
+  if (!is.null(template.name)) {
+          .apply.template(template.name, project.name)
   }
 
   invisible(NULL)

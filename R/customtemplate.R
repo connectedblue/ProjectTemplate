@@ -41,7 +41,7 @@
 #                                       project - individual template definition 
 #
 #      content_location:        where template content can be found:
-#                                       local:/path/to/content/dir.or.file
+#                                       local::/path/to/content/dir.or.file
 #                                       github:username/repo@branch:path/to/content.or.file
 #
 #
@@ -232,10 +232,29 @@
         write.dcf(definition, .root.template.file)
 }
 
+# Backup root template file into specified directory
+.backup.root.template <- function (directory = getwd()) {
+        .require.root.template()
+        backup.location <- file.path(directory, basename(.root.template.file))
+        file.copy(.root.template.file, backup.location, overwrite = TRUE)
+        return(backup.location)
+}
+
+# Restore root template file 
+.restore.root.template <- function (backup.file = basename(.root.template.file)) {
+        if (!file.exists(backup.file))
+                stop("Backup file not found")
+        definition <- .read.root.template(backup.file)
+        .save.root.template(definition)
+        invisible(NULL)
+}
+
 # Clear all root template definitions
 .clear.root.template <- function () {
+        .require.root.template()
         unlink(.root.template.file)
         .require.root.template()
+        invisible(NULL)
 }
 
 # Check if the root template file exists, if it doesn't create an empty one
@@ -267,7 +286,12 @@
 }
 
 # apply the selected template to the specified directory
-.apply.template <- function(template_name, definition, target_location) {
+.apply.template <- function(template_name, target_location) {
+        
+        # get the template definition
+        definition <- .read.root.template()
+        if (is.null(definition)) return(NULL)
+        
         template <- definition[definition$template_name==template_name,]
         
         if (nrow(template)!=1) {
@@ -295,10 +319,28 @@
         
 }
 
-# Blindly copy files from this location into the new location
+# get the default template, or return NULL if there isn't one
+.get.default.template <- function() {
+        
+        # get the template definition
+        definition <- .read.root.template()
+        
+        if (is.null(definition)) return(NULL)
+        
+        template <- definition[definition$default==TRUE,]
+        if (nrow(template)==1)
+                return (template$template_name)
+        
+        return (NULL)
+}
+
+
+# Blindly copy template file structure from a local location into the target
 .add.from.directory.template <- function(template_location, target_location) {
-        #template_files <- list.files(template_location, recursive = TRUE, full.names = TRUE, all.files = TRUE)
-        file.copy(template_location, target_location, overwrite = TRUE, recursive = TRUE, copy.mode = TRUE)
+        template_files <- file.path(template_location,.list.files.and.dirs(template_location))
+        file.copy(template_files, target_location, 
+                  overwrite = TRUE, recursive = TRUE, 
+                  copy.mode = TRUE)
 
 }
 
@@ -341,38 +383,4 @@ github_remote <- function(repo, username = NULL, ref = NULL, subdir = NULL,
                sha = sha,
                auth_token = auth_token
         )
-}
-
-
-# Extract info about the root template file 
-.extract.roottemplate.info <- function () {
-        template.root <- .get.root.location()
-        if (is.null(template.root)) return(NULL)
-        
-        # read raw template information
-        if (template.root$type == "github") {
-                templates <- .download.github(template.root$location)
-        }
-        else if (template.root$type == "local") {
-                templates <- template.root$location
-                sub.dirs <- list.dirs(templates)
-                template.names <- basename(.remove.first(sub.dirs))
-                template.info <- data.frame(
-                        clean.names = sub("(.*)_default$", "\\1", 
-                                          template.names),
-                        default = grepl("_default$", template.names),
-                        path = file.path(templates, template.names)
-                )        
-        }
-        else {
-                template.info <- NULL
-        }
-        if (nrow(template.info)>0){
-                # sort into order - default first
-                template.info <- template.info[with(template.info, 
-                                                    order(-default, clean.names)),]
-                # and make sure there is only one default
-                template.info$default <- c(TRUE, rep(FALSE, nrow(template.info)-1))
-        }
-        template.info
 }
