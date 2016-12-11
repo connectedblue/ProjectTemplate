@@ -44,7 +44,7 @@
 #'     create.project('MyProject')
 #'     create.project('MyProject', 'my.knitr.template')
 #'     }
-create.project <- function(project.name = NULL, template.name = .get.template(default=TRUE), 
+create.project <- function(project.name = NULL, template.name = .get.default.template(), 
                            minimal = FALSE,
                            dump = FALSE, merge.strategy = c("require.empty", "allow.non.conflict"))
 {
@@ -56,9 +56,9 @@ create.project <- function(project.name = NULL, template.name = .get.template(de
                    "Please change to another directory and re-run create.project()"),
                    path=dirname(getwd()))
   
-  # Return list of installed templates if no project name passed and then end
+  # Return list of installed templates if no project name passed
   if (is.null(project.name)) {
-          templates("show")
+          .root.template.status()
           .quietstop()
   }
   

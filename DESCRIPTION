@@ -91,6 +91,7 @@ Collate:
     'customtemplate.R'
     'get.project.R'
     'help.R'
+    'install.template.R'
     'load.project.R'
     'migrate.project.R'
     'project.config.R'
@@ -99,5 +100,6 @@ Collate:
     'show.project.R'
     'stopifnotproject.R'
     'stub.tests.R'
+    'templates.R'
     'test.project.R'
 RoxygenNote: 5.0.1

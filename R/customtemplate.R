@@ -165,12 +165,6 @@
         # make the default column a logical value
         definition$default <- as.logical(definition$default)
         
-        # Make the first item a default if another one isn't, or if there are more
-        # than one default
-        if (sum(definition$default) != 1) {
-                definition$default <- c(TRUE, rep(FALSE, length(definition$default)-1))
-        }
-        
         # Make sure there are no duplicate template_name
         duplicates <- definition$template_name[duplicated(definition$template_name)]
         if (length(duplicates) > 0) {
@@ -288,15 +282,7 @@
 # apply the selected template to the specified directory
 .apply.template <- function(template_name, target_location) {
         
-        # get the template definition
-        definition <- .read.root.template()
-        if (is.null(definition)) return(NULL)
-        
-        template <- definition[definition$template_name==template_name,]
-        
-        if (nrow(template)!=1) {
-                stop(paste0("No sucn template: ", template_name, "\n"))
-        }
+        template <- .get.template(template_name)
         
         # go get template from github if necessary
         if (template$template_type=="github") {
@@ -317,22 +303,63 @@
                 stop(paste0("Invalid Template location: ", file_location, "\n"))
         }
         
+        # Change to the target location directory
+        # Re-read and save the config to make sure it has the latest version number
+        setwd(target_location)
+        .save.config(.load.config())
 }
 
-# get the default template, or return NULL if there isn't one
-.get.default.template <- function() {
+
+# get the relevant template by number, name or default (if there is one)
+.get.template <- function (template.name=NULL, default=FALSE) {
         
         # get the template definition
         definition <- .read.root.template()
         
         if (is.null(definition)) return(NULL)
         
-        template <- definition[definition$default==TRUE,]
-        if (nrow(template)==1)
-                return (template$template_name)
+        if (default) {
+                # return the name of the default template (if there is one)
+                template <- definition[definition$default==TRUE,]
+                return(ifelse(nrow(template)==1, template$template_name, NULL))
+        }
         
-        return (NULL)
+        if (is.null(template.name)) {
+                message("Template name or number must be provided")
+                .quietstop()
+        }
+        
+        if (is.character(template.name))
+                template <- definition[definition$template_name==template.name,]
+        if (is.numeric(template.name))
+                template <- definition[template.name,]
+        
+        # return the template record, if there is one
+        if (nrow(template)==1 && !is.na(template$template_type))
+                return (template)
+        
+        stop(paste0("No such template: ", template.name, "\n"))
+        
 }
+ 
+# add a location to the existing definitions
+
+.add.template.location <- function (template.name, location) {
+        
+        new_template <- data.frame(template_type="root",
+                                   content_location=location,
+                                   template_name=template.name,
+                                   default=FALSE,
+                                   stringsAsFactors = FALSE)
+        # Check it and produce extended database record
+        new_template <- .validate.root.template(.validate.template.definition(new_template))
+        current_templates <- .read.root.template()
+        
+        if (!is.null(current_templates))
+                new_template <- .validate.root.template(rbind(current_templates, new_template))
+        .save.root.template(new_template)
+}
+
 
 
 # Blindly copy template file structure from a local location into the target

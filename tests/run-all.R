@@ -12,7 +12,7 @@ tryCatch(
          test_check("ProjectTemplate"), 
          error = function (e) {
                  
-                 message(paste0("Error: ", e, "\n"))
+                 message(paste0(e))
          },
          finally = {
                  # restore the root template configuration

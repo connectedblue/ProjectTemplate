@@ -1,0 +1,96 @@
+#' Manage custom templates for ProjectTemplate
+#'
+#' This function allows custom templates to be created and deleted which can
+#' be used during \code{\link{create.project}} to enhance the core project layout
+#' with content specific to the user's requirements.
+#' 
+#'
+#' @param command A character string containing a command to apply to the installed
+#'   templates.  Full description of each command is given below.
+#' @param template.name A character string containing the name of the custom
+#'   template that the command should be applied to.
+#' @param location A character string containing the location of a custom
+#'   template.  Should be in the form \code{local::/path/to/template} or
+#'   \code{github:githubname/repository:path/to/template}
+#'   
+#' @return No value is returned; this function is called for its side effects.
+#'
+#'   
+#' @details 
+#' When a template is specified with a \code{create.project()} call, then the content
+#' of that template is merged in with the standard layout provided by \code{Projecttemnplate}.
+#' Templates can be stored in local filesystem directories or on github. 
+#' 
+#' The template configuration
+#' is stored within the local \code{R} configuration and is preserved between package updates of
+#' \code{ProjectTemplate}.  However, if \code{R} is upgraded, the template configuration will need to
+#' be reloaded and this \code{templates()} function can be used to achieve this.
+#' 
+#' The command parameters are shown below.
+#' \tabular{ll}{
+#'  \code{show} \tab This shows the currently installed templates in the system \cr
+#'  \code{add} \tab This allows the template specified in \code{location} to be added to the
+#'     list of installed templates \cr
+#'  \code{remove} \tab This allows the template specified in \code{template.name} to be removed from the
+#'     list of installed templates \cr
+#'  \code{setdefault} \tab This allows the template specified in \code{template.name} to be the default
+#'     template applied when \code{create.project()} is called without the \code{template.name} parameter \cr
+#'  \code{nodefault} \tab This means that no template is applied when \code{create.project()} is called
+#'     unless the \code{template.name} parameter is present \cr
+#'  \code{clear} \tab This removes all custom templates from the current installation \cr
+#'  }
+#'
+#' @seealso \code{\link{load.project}}, \code{\link{get.project}},
+#'   \code{\link{cache.project}}, \code{\link{show.project}}
+#'
+#' @export
+#'
+#' @examples
+#' library('ProjectTemplate')
+#'
+#' \dontrun{
+#'     create.project('MyProject')
+#'     create.project('MyProject', 'my.knitr.template')
+#'     }
+templates <- function(command = "show", template.name = NULL, location = NULL)
+{
+  # messages to the user are stored in the variable m
+  m <- ""
+  
+  # perform the requested command
+  switch(command,
+         show ={
+                 # Return list of installed templates 
+                 .root.template.status()
+         },
+         
+         add ={
+                 if (is.null(location))
+                         stop("Please provide location parameter of the template to add")
+                 if (is.null(template.name)) template.name <- basename(location)
+                 .add.template.location(template.name, location)
+                 .root.template.status()
+         },
+         
+         remove ={
+                  # get the existing templates and find 
+                  definition <- .read.root.template()
+         },
+         
+         setdefault ={
+                 
+         },
+         
+         nodefault ={
+                 
+         },
+         
+         clear ={
+                 .clear.root.template()
+         }
+  )
+  
+  # display the final message to the user before exiting      
+  message(m)  
+  
+}
