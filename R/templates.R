@@ -54,14 +54,12 @@
 #'     }
 templates <- function(command = "show", template.name = NULL, location = NULL)
 {
-  # messages to the user are stored in the variable m
-  m <- ""
   
   # perform the requested command
   switch(command,
          show ={
-                 # Return list of installed templates 
-                 .root.template.status()
+                 # Nothing additional to do 
+                 
          },
          
          add ={
@@ -69,7 +67,7 @@ templates <- function(command = "show", template.name = NULL, location = NULL)
                          stop("Please provide location parameter of the template to add")
                  if (is.null(template.name)) template.name <- basename(location)
                  .add.template.location(template.name, location)
-                 .root.template.status()
+                 
          },
          
          remove ={
@@ -78,19 +76,20 @@ templates <- function(command = "show", template.name = NULL, location = NULL)
          },
          
          setdefault ={
-                 
+                  if (is.null(template.name))
+                         stop("Please provide template name or number that you want to make default")
+                 .set.default.template(template.name)
          },
          
          nodefault ={
-                 
+                .no.default.template() 
          },
          
          clear ={
                  .clear.root.template()
          }
   )
-  
-  # display the final message to the user before exiting      
-  message(m)  
+        
+  .root.template.status()
   
 }

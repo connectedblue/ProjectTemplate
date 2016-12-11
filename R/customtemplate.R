@@ -207,9 +207,6 @@
         # if no root template defined return NULL
         if (is.null(definition)) return(definition)
         
-        # apply additional checks for root template files
-        definition <- .validate.root.template(definition)
-        
         # Save any validation fixes back
         .save.root.template(definition)
         
@@ -219,6 +216,7 @@
 # Save a validated template definition file as the root template
 .save.root.template <- function (definition) {
         
+        definition <- .validate.root.template(definition)
         root_template_fields <- c(.template.field.names, .root.template.field.names)
         
         # only save relevant columns from the definition
@@ -352,15 +350,46 @@
                                    default=FALSE,
                                    stringsAsFactors = FALSE)
         # Check it and produce extended database record
-        new_template <- .validate.root.template(.validate.template.definition(new_template))
+        new_template <- .validate.template.definition(new_template)
         current_templates <- .read.root.template()
         
         if (!is.null(current_templates))
-                new_template <- .validate.root.template(rbind(current_templates, new_template))
+                new_template <- rbind(current_templates, new_template)
         .save.root.template(new_template)
 }
 
+# set which template is the default 
+.set.default.template <- function (template.name) {
+        
+        # get the relevant row from the definition file
+        template <- .get.template(template.name)
+        template$default <- TRUE
+        
+        # make sure there is no default
+        .no.default.template()
+        
+        # get the template definition
+        definition <- .read.root.template()
+        
+        # replace the entry for template.name with one with the default set
+        definition[definition$template_name==template$template_name,] <- template
+        
+        .save.root.template(definition)
+}
 
+# remove default template 
+.no.default.template <- function () {
+        
+        # get the template definition
+        definition <- .read.root.template()
+        
+        # reset the default column
+        definition$default <- rep(FALSE, nrow(definition))
+        
+        # save it
+        .save.root.template(definition)
+        
+}
 
 # Blindly copy template file structure from a local location into the target
 .add.from.directory.template <- function(template_location, target_location) {

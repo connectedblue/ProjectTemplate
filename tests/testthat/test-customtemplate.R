@@ -90,3 +90,77 @@ test_that('adding new templates works correctly ', {
   tidy_up()
 })
 
+test_that('creating projects with no template works correctly', {
+        
+        templates("clear")
+        
+        
+        # add the first one in - should take the name of the directory
+        templates("add", location = template1_dir)
+        
+        # add the second one in - should take the given name 
+        templates("add", "Template_2", location = template2_dir)
+        
+        on.exit(templates("clear"), add=TRUE)
+        
+        # check that templates are loaded
+        expect_message(templates(), "template1")
+        expect_message(templates(), "Template_2")
+        
+        # Create a project based on template 1
+        this_dir <- getwd()
+        
+        test_project <- tempfile('test_project')
+        suppressMessages(create.project(test_project,  minimal = FALSE))
+        on.exit(unlink(test_project, recursive = TRUE), add = TRUE)
+        
+        oldwd <- setwd(test_project)
+        on.exit(setwd(oldwd), add = TRUE)
+        
+        # Should be no warnings
+        expect_warning(load.project(), NA)
+        
+        # no template variable should be present
+        expect_true(is.null(config$template))
+        
+        tidy_up()
+})
+
+test_that('setting and clearing default template works correctly', {
+        
+        templates("clear")
+        
+        
+        # add the first one in - should take the name of the directory
+        templates("add", location = template1_dir)
+        
+        # add the second one in - should take the given name 
+        templates("add", "Template_2", location = template2_dir)
+        
+        on.exit(templates("clear"), add=TRUE)
+        
+        # set  default template - should be tagged with a star
+        expect_message(templates("setdefault", 1), "1.(*)")
+        
+        # Create a project based on default
+        this_dir <- getwd()
+        
+        test_project <- tempfile('test_project')
+        suppressMessages(create.project(test_project,  minimal = FALSE))
+        on.exit(unlink(test_project, recursive = TRUE), add = TRUE)
+        
+        oldwd <- setwd(test_project)
+        on.exit(setwd(oldwd), add = TRUE)
+        
+        # template 1 has a custom config variable called template which is set to 1
+        # and a file called readme.md
+        suppressMessages(load.project())
+        expect_true(file.exists("readme.md"))
+        expect_equal(config$template, 1)
+        
+        # clear  defaults template - should be no star
+        expect_message(templates("nodefault"), "1.   ")
+        
+        tidy_up()
+})
+
