@@ -13,7 +13,7 @@ template2_dir <- gsub("^[^/]*(.*)$", "local::\\1", template2_dir)
 
 test_that('adding new templates works correctly ', {
 
-  expect_message(templates("clear"), "")
+  expect_message(templates("clear"), "Templates not configured")
   expect_message(templates(), "Custom Templates not configured")  
   
   # add the first one in - should take the name of the directory

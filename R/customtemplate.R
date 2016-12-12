@@ -207,6 +207,9 @@
         # if no root template defined return NULL
         if (is.null(definition)) return(definition)
         
+        # validate the root template
+        definition <- .validate.root.template(definition)
+        
         # Save any validation fixes back
         .save.root.template(definition)
         
@@ -350,11 +353,11 @@
                                    default=FALSE,
                                    stringsAsFactors = FALSE)
         # Check it and produce extended database record
-        new_template <- .validate.template.definition(new_template)
+        new_template <- .validate.root.template(.validate.template.definition(new_template))
         current_templates <- .read.root.template()
         
         if (!is.null(current_templates))
-                new_template <- rbind(current_templates, new_template)
+                new_template <- .validate.root.template(rbind(current_templates, new_template))
         .save.root.template(new_template)
 }
 
