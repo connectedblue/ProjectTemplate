@@ -87,6 +87,16 @@ test_that('adding new templates works correctly ', {
   expect_equal(config1$munging, TRUE)
   expect_true(is.character(config1$libraries))
   
+  # clearing templates works correctly
+  expect_message(templates("clear"), "Templates not configured")
+  
+  # Create a project based on template 2 again, but this time it doesn't exist
+  setwd(this_dir)
+  
+  test_project4 <- tempfile('test_project')
+  expect_error(create.project(test_project4, 2, minimal = FALSE), "")
+  
+  
   tidy_up()
 })
 
@@ -160,6 +170,9 @@ test_that('setting and clearing default template works correctly', {
         
         # clear  defaults template - should be no star
         expect_message(templates("nodefault"), "1.   ")
+        
+        # setting default for a template that doesn't exist is an error
+        expect_error(templates("setdefault", 10), "No such template")
         
         tidy_up()
 })

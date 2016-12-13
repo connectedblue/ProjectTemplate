@@ -153,6 +153,9 @@
 # Check the root template has the right format
 .validate.root.template <- function(definition) {
         
+         # return if no templates
+        if(.no.templates %in% names(definition)) return (definition)
+       
         # Make sure only root items are included in the definition
         definition <- definition[definition$template_type == "root",]
         
@@ -284,6 +287,11 @@
 .apply.template <- function(template_name, target_location) {
         
         template <- .get.template(template_name)
+        
+        if (is.null(template)) {
+                message(paste0("Template ", template_name, " is not installed"))
+                .quietstop()
+        }
         
         # go get template from github if necessary
         if (template$template_type=="github") {

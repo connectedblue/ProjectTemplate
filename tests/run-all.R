@@ -2,10 +2,10 @@ library(testthat)
 
 
 # Save the current root template configuration
-assign("root_template",  .backup.root.template(tempdir()), envir = baseenv())
+assign("root_template",  ProjectTemplate:::.backup.root.template(tempdir()), envir = baseenv())
 
 # remove the configuration before running the tests
-.clear.root.template()
+ProjectTemplate:::.clear.root.template()
 
 # Run the tests and restore the root config afterwards
 tryCatch(
@@ -16,7 +16,7 @@ tryCatch(
          },
          finally = {
                  # restore the root template configuration
-                 .restore.root.template(root_template)
+                 ProjectTemplate:::.restore.root.template(root_template)
                  
                  # tidy up
                  unlink(root_template)

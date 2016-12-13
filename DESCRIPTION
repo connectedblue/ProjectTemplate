@@ -91,7 +91,6 @@ Collate:
     'customtemplate.R'
     'get.project.R'
     'help.R'
-    'install.template.R'
     'load.project.R'
     'migrate.project.R'
     'project.config.R'
