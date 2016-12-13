@@ -38,6 +38,10 @@
 #'  \code{nodefault} \tab This means that no template is applied when \code{create.project()} is called
 #'     unless the \code{template.name} parameter is present \cr
 #'  \code{clear} \tab This removes all custom templates from the current installation \cr
+#'  \code{backup} \tab Create the raw template file in the current working directory or the
+#'      directory specified in \code{location} parameter \cr
+#'  \code{restore} \tab Reads a raw template file in the current working directory named 
+#'      \code{ProjectTemplateRootConfig.dcf} or the file specified in \code{location} parameter \cr
 #'  }
 #'
 #' @seealso \code{\link{load.project}}, \code{\link{get.project}},
@@ -71,8 +75,7 @@ templates <- function(command = "show", template.name = NULL, location = NULL)
          },
          
          remove ={
-                  # get the existing templates and find 
-                  definition <- .read.root.template()
+                  # Not implemented yet
          },
          
          setdefault ={
@@ -87,6 +90,20 @@ templates <- function(command = "show", template.name = NULL, location = NULL)
          
          clear ={
                  .clear.root.template()
+         },
+         
+         backup ={
+                 if (!is.null(location) && dir.exists(location))
+                        .backup.root.template(location)
+                 else
+                        .backup.root.template()
+         },
+         
+         restore ={
+                 if (is.null(location))
+                        .restore.root.template() 
+                 else
+                        .restore.root.template(location)
          }
   )
         

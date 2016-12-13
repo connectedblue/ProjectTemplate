@@ -11,6 +11,8 @@ template2_dir <- system.file('example_data/example_templates/template2', package
 template1_dir <- gsub("^[^/]*(.*)$", "local::\\1", template1_dir)
 template2_dir <- gsub("^[^/]*(.*)$", "local::\\1", template2_dir)
 
+template_dcf <- system.file('example_data/example_templates/ProjectTemplateRootConfig.dcf', package = 'ProjectTemplate')
+
 test_that('adding new templates works correctly ', {
 
   expect_message(templates("clear"), "Templates not configured")
@@ -173,6 +175,48 @@ test_that('setting and clearing default template works correctly', {
         
         # setting default for a template that doesn't exist is an error
         expect_error(templates("setdefault", 10), "No such template")
+        
+        tidy_up()
+})
+
+test_that('backing up and restoring template files works correctly', {
+        
+        on.exit(templates("clear"), add=TRUE)
+        
+        templates("clear")
+        
+        # load template dcf that should configure template 1 and 2 above
+        expect_message(templates("restore", location=template_dcf), "template1")
+        expect_message(templates(), "Template_2")
+        
+        # No default set in the file
+        expect_message(templates(), "1.   ")
+        expect_message(templates(), "2.   ")
+        
+        # set the default to number 2
+        expect_message(templates("setdefault", 2), "2.(*)")
+        
+        # Backup the file
+        this_dir <- getwd()
+        
+        test_project <- tempfile('test_project')
+        dir.create(test_project)
+        suppressMessages(templates("backup", location=test_project))
+        on.exit(unlink(test_project, recursive = TRUE), add = TRUE)
+        
+        oldwd <- setwd(test_project)
+        on.exit(setwd(oldwd), add = TRUE)
+        
+        templates("clear")
+        
+        # restore the file
+        expect_message(templates("restore", location=file.path(test_project, "ProjectTemplateRootConfig.dcf")), "2.(*)")
+        
+        # project created should load default template 2
+        suppressMessages(create.project("xxx"))
+        suppressMessages(load.project())
+        expect_equal(config$template, 2)
+        
         
         tidy_up()
 })
