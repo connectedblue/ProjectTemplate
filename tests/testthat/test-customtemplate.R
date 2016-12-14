@@ -119,7 +119,7 @@ test_that('creating projects with no template works correctly', {
         expect_message(templates(), "template1")
         expect_message(templates(), "Template_2")
         
-        # Create a project based on template 1
+        # Create a project based on no template
         this_dir <- getwd()
         
         test_project <- tempfile('test_project')
