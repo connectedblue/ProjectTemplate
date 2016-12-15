@@ -71,9 +71,6 @@
 # template structure.  If not, any files or folders are copied directly (with over-write)
 # to the target project directory.  
 
-# Make sure create.project is loaded before this file is built
-#' @include create.project.R
-
 
 #
 # Custom template functions start here .....
@@ -111,11 +108,16 @@
         }
         
         # go get template from github if necessary
-        if (template$template_type=="github") {
-                template <- .download.github.template(template)
+        if (template$location_type=="github") {
+                
+                download_dir <- suppressMessages(.download.github.template(template$github_repo))
+                file_location <- file.path(download_dir, template$file_location)
+                on.exit(unlink(file.path(download_dir, "..", "..", recursive=TRUE)))
+                
+        } else if (template$location_type=="local") {
+                file_location <- as.character(template$file_location)
         }
         
-        file_location <- as.character(template$file_location)
         # if the file_location is a directory, process it directly, otherwise process
         # it as a custom project template definition file
         if (dir.exists(file_location)) {
@@ -123,7 +125,8 @@
                 message(paste0("Applied template: ", template$template_name, "\n"))
         }
         else if (file.exists(file_location)) {
-                .add.from.dcf.template(file_location, target_location)
+                stop("Project definition files not implemented yet")
+                #.add.from.dcf.template(file_location, target_location)
         }
         else {
                 stop(paste0("Invalid Template location: ", file_location, "\n"))
@@ -133,6 +136,8 @@
         # Re-read and save the config to make sure it has the latest version number
         setwd(target_location)
         .save.config(.load.config())
+        
+        
 }
 
 # Blindly copy template file structure from a local location into the target
@@ -437,7 +442,7 @@
 
 
 
-.download.github <- function (location) {
+.download.github.template <- function (location) {
         
         # location is in format github_user/repo_name@branch
         
@@ -454,10 +459,10 @@
         unzip(file_location)
         unlink(file_location)
         
-        # get zipped directory name
-        dir <- .list.file.and.dirs(file_directory)
+        # get zipped directory name which is the sole item now in the directory
+        dir <- .list.files.and.dirs(file_directory)
         
-        # return location of the templates
+        # return local location of the downloaded template
         file.path(file_directory, dir)
 }
 
