@@ -71,6 +71,10 @@
 # template structure.  If not, any files or folders are copied directly (with over-write)
 # to the target project directory.  
 
+# Make sure create.project is loaded before this file is built
+#' @include create.project.R
+
+
 #
 # Custom template functions start here .....
 #
@@ -299,7 +303,7 @@
         
         # only save relevant columns from the definition
         definition <- definition[,root_template_fields]
-        write.dcf(definition, .root.template.file)
+        write.dcf(definition, .root.template.file, keep.white = "content_location")
 }
 
 # Backup root template file into specified directory
@@ -434,41 +438,27 @@
 
 
 .download.github <- function (location) {
-        #.require.package(devtools)
-        library(devtools)
+        
+        # location is in format github_user/repo_name@branch
+        
         gh_remote <- devtools:::github_remote(location)
         file_location <- devtools:::remote_download.github_remote(gh_remote)
-        file_location
+        
+        # get a temporary directory to unzip the downloaded file
+        file_directory <- tempfile("github")
+        dir.create(file_directory)
+        
+        oldwd <- setwd(file_directory)
+        on.exit(setwd(oldwd), add = TRUE)
+        
+        unzip(file_location)
+        unlink(file_location)
+        
+        # get zipped directory name
+        dir <- .list.file.and.dirs(file_directory)
+        
+        # return location of the templates
+        file.path(file_directory, dir)
 }
 
 
-#
-# This function is cut and pasted from devtools.  It would be better if it were
-# exported from that package to allow it to be called from this package
-# A request has been raised against that package to add this function to be 
-# exported - when it is, this function can be deleted
-#
-github_remote <- function(repo, username = NULL, ref = NULL, subdir = NULL,
-                          auth_token = github_pat(), sha = NULL,
-                          host = "https://api.github.com") {
-        
-        meta <- devtools:::parse_git_repo(repo)
-        meta <- devtools:::github_resolve_ref(meta$ref %||% ref, meta)
-        
-        if (is.null(meta$username)) {
-                meta$username <- username %||% getOption("github.user") %||%
-                        stop("Unknown username.")
-                warning("Username parameter is deprecated. Please use ",
-                        username, "/", repo, call. = FALSE)
-        }
-        
-        devtools::remote("github",
-               host = host,
-               repo = meta$repo,
-               subdir = meta$subdir %||% subdir,
-               username = meta$username,
-               ref = meta$ref,
-               sha = sha,
-               auth_token = auth_token
-        )
-}
