@@ -156,7 +156,8 @@
         # get the template definition
         definition <- .read.root.template()
         
-        if (is.null(definition)) return(NULL)
+        if(!.templates.defined(definition))  
+                return (NULL)
         
         if (default) {
                 # return the name of the default template (if there is one)
@@ -198,7 +199,7 @@
         new_template <- .validate.root.template(.validate.template.definition(new_template))
         current_templates <- .read.root.template()
         
-        if (!is.null(current_templates))
+        if (.templates.defined(current_templates))
                 new_template <- .validate.root.template(rbind(current_templates, new_template))
         .save.root.template(new_template)
 }
@@ -209,6 +210,8 @@
         # get the relevant row from the definition file
         template <- .get.template(template.name)
         template$default <- TRUE
+        
+        if(is.null(template)) return(invisible(NULL))
         
         # make sure there is no default
         .no.default.template()
@@ -225,8 +228,13 @@
 # remove default template 
 .no.default.template <- function () {
         
+        
         # get the template definition
         definition <- .read.root.template()
+        
+        if(!.templates.defined(definition))  
+                return(NULL)
+        
         
         # reset the default column
         definition$default <- rep(FALSE, nrow(definition))
@@ -239,7 +247,6 @@
 
 
 # Internal functions to manipulate the root template file
-
 
 # Read a template definition file, validate it and return the contents as a dataframe
 # If no file parameter specified, the function reads the .root.template.file, otherwise
@@ -254,7 +261,8 @@
         definition <- .read.template.definition(template.file)
         
         # if no root template defined return NULL
-        if (is.null(definition)) return(definition)
+        if(!.templates.defined(definition))  
+                return (NULL)
         
         # validate the root template
         definition <- .validate.root.template(definition)
@@ -269,8 +277,8 @@
 .validate.root.template <- function(definition) {
         
         # return if no templates
-        if((.no.templates %in% names(definition)) || is.null(definition)) 
-                return (definition)
+        if(!.templates.defined(definition))  
+                return (NULL)
         
         # Make sure only root items are included in the definition
         definition <- definition[definition$template_type == "root",]
@@ -346,9 +354,9 @@
 }
 
 # Provide the status of templates defined in the root template
-.root.template.status <- function () {
+.root.template.status <- function (full=FALSE) {
         template.definition <- .read.root.template()
-        if (is.null(template.definition)) {
+        if (!.templates.defined(template.definition)) {
                 message(paste0(c("Custom Templates not configured for this installation."),
                                   collapse = "\n"))
         }
@@ -358,9 +366,11 @@
                 message(paste0(c("The following templates are available:", 
                                  template.definition$display_name),
                                collapse = "\n"))
+                # Provide detailed configuration               
         }
         
 }
+
 
 # Internal functions to read and validate root template files from disk
 
@@ -371,14 +381,23 @@
                                     stringsAsFactors = FALSE)
         
         # return NULL if no templates defined
-        if ((.no.templates %in% names(definition)) ||
-             nrow(definition)==0) 
+        if (!.templates.defined(definition)) 
                 return(NULL)
         
         definition <- .validate.template.definition(definition)
         
         definition
 }
+
+# Determine whether custom templates are present
+.templates.defined <- function(definition){
+        if ((.no.templates %in% names(definition)) || is.null(definition) ||
+            nrow(definition)==0)
+                return(FALSE)
+        return(TRUE)
+}
+
+
 
 # enforce some rules about all template types:
 #       check field names are correct

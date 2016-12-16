@@ -93,7 +93,14 @@ create.project <- function(project.name = NULL, template.name = .get.template(de
   }
   
   if (!is.null(template.name)) {
-          .apply.template(template.name, project.name)
+          tryCatch(
+                .apply.template(template.name, project.name),
+                
+                error=function (e) {
+                        message(paste0("Unable to add template: ", template.name))
+                        message("Run templates('config') to check the configuration")
+                }
+           )
   }
 
   invisible(NULL)

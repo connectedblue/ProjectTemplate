@@ -96,7 +96,7 @@ test_that('adding new templates works correctly ', {
   setwd(this_dir)
   
   test_project4 <- tempfile('test_project')
-  expect_error(create.project(test_project4, 2, minimal = FALSE), "")
+  expect_message(create.project(test_project4, 2, minimal = FALSE), "Unable to add template: ")
   
   
   tidy_up()
