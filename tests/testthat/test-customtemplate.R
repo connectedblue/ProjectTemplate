@@ -221,3 +221,61 @@ test_that('backing up and restoring template files works correctly', {
         tidy_up()
 })
 
+test_that('adding templates hosted on github works correctly', {
+        
+        templates("clear")
+        
+        # The following template repository has been set up to support this test.
+        # Once merged into master, a new github account should be set up for this purpose and
+        # the login held by the ProjectTemplate maintainers.  In the meantime access rights
+        # can be granted
+        github_repo1 <- "github:connectedblue/pt_tests:template1"
+        github_repo2 <- "github:connectedblue/pt_tests:template2"
+        
+        # add the first one in - should take the name of the directory
+        expect_message(templates("add", location = github_repo1), "pt_tests:template1")
+        
+        # add the second one in - should take the given name 
+        expect_message(templates("add", "Template_2", location = github_repo2), "Template_2")
+        
+        on.exit(templates("clear"), add=TRUE)
+        
+        # Create a project based on template 1
+        this_dir <- getwd()
+        
+        test_project <- tempfile('test_project')
+        suppressMessages(create.project(test_project, "pt_tests:template1", minimal = FALSE))
+        on.exit(unlink(test_project, recursive = TRUE), add = TRUE)
+        
+        oldwd <- setwd(test_project)
+        on.exit(setwd(oldwd), add = TRUE)
+        
+        # template 1 has a custom config variable called template which is set to 1
+        # and a file called readme.md
+        suppressMessages(load.project())
+        expect_true(file.exists("readme.md"))
+        expect_equal(config$template, 1)
+        
+        
+        # Create a project based on template 2
+        setwd(this_dir)
+        
+        test_project2 <- tempfile('test_project')
+        suppressMessages(create.project(test_project2, 2, minimal = FALSE))
+        on.exit(unlink(test_project2, recursive = TRUE), add = TRUE)
+        
+        oldwd <- setwd(test_project2)
+        on.exit(setwd(oldwd), add = TRUE)
+        
+        # template 2 has a custom config variable called template which is set to 2
+        # and a file called readme.md
+        suppressMessages(load.project())
+        expect_true(file.exists("readme.md"))
+        expect_equal(config$template, 2)
+        
+        # be sure that this is the github template
+        expect_equal(config$github, "github")
+        
+        
+        tidy_up()
+})
