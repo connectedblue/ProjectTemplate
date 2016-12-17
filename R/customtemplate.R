@@ -362,11 +362,28 @@
         }
         
         else {
-                
-                message(paste0(c("The following templates are available:", 
-                                 template.definition$display_name),
-                               collapse = "\n"))
-                # Provide detailed configuration               
+                message("The following templates are available:")
+                if (!full) {
+                        message(paste0(template.definition$display_name,
+                                       collapse = "\n"))
+                }
+                else {
+                        # Provide detailed configuration
+                        m <- c()
+                        e <- environment()
+                        apply(template.definition, 1, function (t) {
+                              m <- c(m, t['display_name'])
+                              m <- c(m, paste0("        type: ", t['location_type']))
+                              if (t['location_type']=="github") 
+                                      m <- c(m, paste0("        github repo: ", t['github_repo']))
+                              m <- c(m, paste0("        directory: ", t['file_location']))
+                              m <- c(m, "")
+                              assign("m", m, envir = e)
+                              }
+                        )
+                        message(paste0(m, collapse = "\n"))
+                }
+                               
         }
         
 }

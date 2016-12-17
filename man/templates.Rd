@@ -38,6 +38,7 @@ be reloaded and this \code{templates()} function can be used to achieve this.
 The command parameters are shown below.
 \tabular{ll}{
  \code{show} \tab This shows the currently installed templates in the system \cr
+ \code{config} \tab This shows the detailed configuration of each installed templates \cr
  \code{add} \tab This allows the template specified in \code{location} to be added to the
     list of installed templates \cr
  \code{remove} \tab This allows the template specified in \code{template.name} to be removed from the
