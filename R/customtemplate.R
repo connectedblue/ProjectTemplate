@@ -137,7 +137,7 @@
         # Change to the target location directory
         # Re-read and save the config to make sure it has the latest version number
         setwd(target_location)
-        .save.config(.load.config(compare.config=.new.config))
+        .save.config(suppressWarnings(.load.config(compare.config=.new.config)))
         
         
 }
