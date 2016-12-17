@@ -76,7 +76,14 @@ test_that('adding new templates works correctly ', {
   expect_warning(load.project(), NA)
   expect_true(file.exists("readme.md"))
   expect_equal(config$template, 2)
+  
+  # custom config from template should be preserved
   expect_equal(config$data_loading, FALSE)
+  
+  # cache_loaded_data was not included in the template, but it should still be present and 
+  # have the same value as a newly created project which is TRUE  
+  # (nb this parameter is FALSE if not included when load.project() is run and it's not present ....)
+  expect_equal(config$cache_loaded_data, TRUE)
   
   # Also template 2 had a config with an old version number, data_loading set to FALSE and no other items
   # Check that the config file has been repaired but retaining the set value for data_loading
