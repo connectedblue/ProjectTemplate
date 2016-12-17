@@ -7,8 +7,9 @@
 #'
 #' @param command A character string containing a command to apply to the installed
 #'   templates.  Full description of each command is given below.
-#' @param template.name A character string containing the name of the custom
-#'   template that the command should be applied to.
+#' @param template.name The string name or number of the custom
+#'   template that the command should be applied to.  Template numbers can be found
+#'   by the \code{templates()} command.  
 #' @param location A character string containing the location of a custom
 #'   template.  Should be in the form \code{local::/path/to/template} or
 #'   \code{github:githubname/repository:path/to/template}
@@ -21,10 +22,17 @@
 #' of that template is merged in with the standard layout provided by \code{Projecttemnplate}.
 #' Templates can be stored in local filesystem directories or on github. 
 #' 
+#' The \code{config/globals.dcf} configuration file is treated specially if it is present in
+#' the template.  The template only needs to contain the specific parameters that the user wants
+#' to have different from the default.  The \code{templates()} function will take care of filling
+#' in the rest of the values with the standard defaults and ensure the correct version number
+#' is in place.  This means that templates don't have to keep up to date with new config parameters
+#' if they don't need to.
+#' 
 #' The template configuration
 #' is stored within the local \code{R} configuration and is preserved between package updates of
 #' \code{ProjectTemplate}.  However, if \code{R} is upgraded, the template configuration will need to
-#' be reloaded and this \code{templates()} function can be used to achieve this.
+#' be reloaded using \code{templates("backup")} and \code{templates("restore")}.
 #' 
 #' The command parameters are shown below.
 #' \tabular{ll}{
@@ -54,8 +62,13 @@
 #' library('ProjectTemplate')
 #'
 #' \dontrun{
-#'     create.project('MyProject')
-#'     create.project('MyProject', 'my.knitr.template')
+#'     templates()
+#'     
+#'     # name of template is my_template (default directory name if not specified)
+#'     templates("add", location="local::/path/to/my_template)  
+#'     
+#'     # name of template is gitTemp 
+#'     templates("add", "gitTemp",location="github:username/reponame:/my_template) 
 #'     }
 templates <- function(command = "show", template.name = NULL, location = NULL)
 {

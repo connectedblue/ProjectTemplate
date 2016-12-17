@@ -4,17 +4,17 @@
 \alias{create.project}
 \title{Create a new project.}
 \usage{
-create.project(project.name = NULL, template.name = .get.template(default =
-  TRUE), minimal = FALSE, dump = FALSE,
-  merge.strategy = c("require.empty", "allow.non.conflict"))
+create.project(project.name = "new-project",
+  template.name = .get.template(default = TRUE), minimal = FALSE,
+  dump = FALSE, merge.strategy = c("require.empty", "allow.non.conflict"))
 }
 \arguments{
 \item{project.name}{A character vector containing the name for this new
 project. Must be a valid directory name for your file system.}
 
-\item{template.name}{A character string containing the name of the custom
+\item{template.name}{A string name or number of the custom
 template that should be applied after the base project has been created.  
-The templates are installed using \code{\link{install.template}}.}
+Templates are installed using the \code{\link{templates("add", ...)}} command.}
 
 \item{minimal}{A boolean value indicating whether to create a minimal
 project or a full project. A minimal project contains only the
