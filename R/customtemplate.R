@@ -19,17 +19,19 @@
 # between updates to ProjectTemplate itself, but import and export functions are provided 
 # to allow config to be preserved between different versions of R.
 #
-# A user function configure.templates() provides a management interface to manage the
+# A user function templates() provides a management interface to manage the
 # installed templates on a system.
 #
 # Template designers can simply create directory structures for any functionality they 
 # want to, e.g. knitr templates, shinyapps, corporate analysis standards etc.
+#
 # There is an advanced template design feature, whereby the template is described in
 # a template definition file.  This allows for re-use of functionalility between templates
 # (e.g. a lib function that you'd like to make available in many templates).  It also
 # allows more fine grained control than just plain copy-and-overwrite.  For example, it
 # can be specifed for a .gitignore segment on a template to be appended to an existing
 # .gitignore in the target project template directory.
+# NB:  Advanced template design has not been implemented yet.  It will be added over time
 #
 # Template definitions are stored in a DCF format file, and loaded into a dataframe for 
 # processing.  There can be multiple DCF records defined in a single file.  Each record
