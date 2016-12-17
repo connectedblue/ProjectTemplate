@@ -159,7 +159,7 @@ test_that('setting and clearing default template works correctly', {
         on.exit(templates("clear"), add=TRUE)
         
         # set  default template - should be tagged with a star
-        expect_message(templates("setdefault", 1), "1.(*)")
+        expect_message(templates("setdefault", 1), "1.\\(\\*\\)")
         
         # Create a project based on default
         this_dir <- getwd()
@@ -201,7 +201,7 @@ test_that('backing up and restoring template files works correctly', {
         expect_message(templates(), "2.   ")
         
         # set the default to number 2
-        expect_message(templates("setdefault", 2), "2.(*)")
+        expect_message(templates("setdefault", 2), "2.\\(\\*\\)")
         
         # Backup the file
         this_dir <- getwd()
@@ -217,7 +217,7 @@ test_that('backing up and restoring template files works correctly', {
         templates("clear")
         
         # restore the file
-        expect_message(templates("restore", location=file.path(test_project, "ProjectTemplateRootConfig.dcf")), "2.(*)")
+        expect_message(templates("restore", location=file.path(test_project, "ProjectTemplateRootConfig.dcf")), "2.\\(\\*\\)")
         
         # project created should load default template 2
         suppressMessages(create.project("xxx"))
@@ -282,6 +282,33 @@ test_that('adding templates hosted on github works correctly', {
         
         # be sure that this is the github template
         expect_equal(config$github, "github")
+        
+        
+        tidy_up()
+})
+
+test_that('removing templates works correctly', {
+        
+        templates("clear")
+        
+        
+        # add the first one in - should take the name of the directory
+        templates("add", location = template1_dir)
+        
+        # add the second one in - should take the given name 
+        templates("add", "Template_2", location = template2_dir)
+        
+        # make number 2 the default
+        templates("setdefault", 2)
+        
+        on.exit(templates("clear"), add=TRUE)
+        
+        # check that template 1 is deleted and replaced with Template 2
+        # Template 2 should be the default still
+        expect_message(templates("remove", 1), "1.\\(\\*\\) Template_2")
+        
+        # Removing 1 should result in nothing left
+        expect_message(templates("remove", 1), "Custom Templates not configured")
         
         
         tidy_up()

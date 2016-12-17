@@ -81,7 +81,9 @@ templates <- function(command = "show", template.name = NULL, location = NULL)
          },
          
          remove ={
-                  # Not implemented yet
+                 if (is.null(template.name))
+                         stop("Please provide template name or number to remove")
+                 .remove.template.location(template.name)
          },
          
          setdefault ={

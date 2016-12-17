@@ -186,7 +186,7 @@
         
 }
 
-# add a location to the existing definitions
+# add a location to the existing root template file
 
 .add.template.location <- function (template.name, location) {
         
@@ -201,6 +201,21 @@
         
         if (.templates.defined(current_templates))
                 new_template <- .validate.root.template(rbind(current_templates, new_template))
+        .save.root.template(new_template)
+}
+
+# remove a template from the existing  root template file
+
+.remove.template.location <- function (template.name) {
+        
+        remove_template <- .get.template(template.name)
+        current_templates <- .read.root.template()
+        
+        if (is.null(remove_template) || is.null(current_templates))
+                stop(paste0("Unable to remove template: ", template.name))
+        
+        new_template <- current_templates[!(current_templates$template_name %in% 
+                                                    remove_template$template_name),]
         .save.root.template(new_template)
 }
 
