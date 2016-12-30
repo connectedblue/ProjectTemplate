@@ -27,7 +27,7 @@
 #'
 #' \dontrun{require.package('PackageName')}
 #' @importFrom utils install.packages
-require.package <- function(package.name, attach = TRUE)
+require.package <- function(package.name, attach = TRUE, FUN=install.packages, ...)
 {
   # Temporarily disable warnings
   old.options <- options(warn=-1)
@@ -35,7 +35,7 @@ require.package <- function(package.name, attach = TRUE)
 
   success <- .attach.or.add.namespace(package.name, attach)
   if (!success) {
-    install.packages(package.name)
+    sapply(package.name, FUN, ...)
     message(paste('Trying to install the', package.name, sep = ' '))
     success <- .attach.or.add.namespace(package.name, attach)
     if(!success) {
