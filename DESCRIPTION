@@ -101,4 +101,4 @@ Collate:
     'stub.tests.R'
     'templates.R'
     'test.project.R'
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
