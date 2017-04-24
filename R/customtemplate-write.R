@@ -13,16 +13,19 @@
 # anything already there, and adding any new files.
 #
 # The available templates for a site are defined in a file called the root template
-# file which is stored in the user's home directory.  Note that CRAN packages are not
-# allowed to modify files in the user's home directory, so an additional helper package
-# called CustomTemplateUtilities is required which is hosted on github.  That package 
-# contains function called templates() which allows the user to manage the root template
-# file.
+# file which is stored in the etc directory of the current R installation directory.  
+#
+# The etc location is chosed in order to preserve config
+# between updates to ProjectTemplate itself, but import and export functions are provided 
+# to allow config to be preserved between different versions of R.
+#
+# A user function templates() provides a management interface to manage the
+# installed templates on a system.
 #
 # Template designers can simply create directory structures for any functionality they 
 # want to, e.g. knitr templates, shinyapps, corporate analysis standards etc.
 #
-# For the Future:  There is an advanced template design feature, whereby the template is described in
+# There is an advanced template design feature, whereby the template is described in
 # a template definition file.  This allows for re-use of functionalility between templates
 # (e.g. a lib function that you'd like to make available in many templates).  It also
 # allows more fine grained control than just plain copy-and-overwrite.  For example, it
@@ -61,10 +64,15 @@
 #       merge:     not used
 # target_dir:      not used
 #
-# The file is stored in the user's home directory, or in the location specified by the
-# PT_ROOT_TEMPLATE_DIR environment variable
-# It is named is named ProjectTemplateRootConfig.dcf
+# The file is stored in the ProjectTemplate package under the directory:
+#           {R Home}/etc 
+# and is named ProjectTemplateRootConfig.dcf.  
 #
+# General template definition files reside directly under the template subdirectory
+# with the name template-definition.dcf.  If this file exists, it is used to build the
+# template structure.  If not, any files or folders are copied directly (with over-write)
+# to the target project directory.  
+
 
 #
 # Custom template functions start here .....
@@ -72,9 +80,9 @@
 
 # First, Some short cut definitions to aid readability
 
-# Where is the root template location defined 
-.root.template.dir <- ifelse(Sys.getenv("PT_ROOT_TEMPLATE_DIR")=="",Sys.getenv("R_USER"),
-                             Sys.getenv("PT_ROOT_TEMPLATE_DIR"))
+# Where is the root template location defined - put in the R/etc folder to preserve config
+# between installs of ProjectTemplate
+.root.template.dir <- file.path(R.home(), "etc")
 .root.template.file <- file.path(.root.template.dir, "ProjectTemplateRootConfig.dcf")
 
 # Types of template configuration allowed
@@ -180,6 +188,79 @@
         
 }
 
+# add a location to the existing root template file
+
+.add.template.location <- function (template.name, location) {
+        
+        new_template <- data.frame(template_type="root",
+                                   content_location=location,
+                                   template_name=template.name,
+                                   default=FALSE,
+                                   stringsAsFactors = FALSE)
+        # Check it and produce extended database record
+        new_template <- .validate.root.template(.validate.template.definition(new_template))
+        current_templates <- .read.root.template()
+        
+        if (.templates.defined(current_templates))
+                new_template <- .validate.root.template(rbind(current_templates, new_template))
+        .save.root.template(new_template)
+}
+
+# remove a template from the existing  root template file
+
+.remove.template.location <- function (template.name) {
+        
+        remove_template <- .get.template(template.name)
+        current_templates <- .read.root.template()
+        
+        if (is.null(remove_template) || is.null(current_templates))
+                stop(paste0("Unable to remove template: ", template.name))
+        
+        new_template <- current_templates[!(current_templates$template_name %in% 
+                                                    remove_template$template_name),]
+        .save.root.template(new_template)
+}
+
+# set which template is the default 
+.set.default.template <- function (template.name) {
+        
+        # get the relevant row from the definition file
+        template <- .get.template(template.name)
+        template$default <- TRUE
+        
+        if(is.null(template)) return(invisible(NULL))
+        
+        # make sure there is no default
+        .no.default.template()
+        
+        # get the template definition
+        definition <- .read.root.template()
+        
+        # replace the entry for template.name with one with the default set
+        definition[definition$template_name==template$template_name,] <- template
+        
+        .save.root.template(definition)
+}
+
+# remove default template 
+.no.default.template <- function () {
+        
+        
+        # get the template definition
+        definition <- .read.root.template()
+        
+        if(!.templates.defined(definition))  
+                return(NULL)
+        
+        
+        # reset the default column
+        definition$default <- rep(FALSE, nrow(definition))
+        
+        # save it
+        .save.root.template(definition)
+        
+}
+
 
 
 # Internal functions to manipulate the root template file
@@ -244,6 +325,41 @@
 }
 
 
+# Save a validated template definition file as the root template
+.save.root.template <- function (definition) {
+        
+        definition <- .validate.root.template(definition)
+        root_template_fields <- c(.template.field.names, .root.template.field.names)
+        
+        # only save relevant columns from the definition
+        definition <- definition[,root_template_fields]
+        write.dcf(definition, .root.template.file, keep.white = "content_location")
+}
+
+# Backup root template file into specified directory
+.backup.root.template <- function (directory = getwd()) {
+        .require.root.template()
+        backup.location <- file.path(directory, basename(.root.template.file))
+        file.copy(.root.template.file, backup.location, overwrite = TRUE)
+        return(backup.location)
+}
+
+# Restore root template file 
+.restore.root.template <- function (backup.file = basename(.root.template.file)) {
+        if (!file.exists(backup.file))
+                stop("Backup file not found")
+        definition <- .read.root.template(backup.file)
+        .save.root.template(definition)
+        invisible(NULL)
+}
+
+# Clear all root template definitions
+.clear.root.template <- function () {
+        .require.root.template()
+        unlink(.root.template.file)
+        .require.root.template()
+        invisible(NULL)
+}
 
 # Check if the root template file exists, if it doesn't create an empty one
 .require.root.template <- function() {
