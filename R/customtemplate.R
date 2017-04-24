@@ -73,9 +73,15 @@
 # First, Some short cut definitions to aid readability
 
 # Where is the root template location defined 
-.root.template.dir <- ifelse(Sys.getenv("PT_ROOT_TEMPLATE_DIR")=="",Sys.getenv("R_USER"),
-                             Sys.getenv("PT_ROOT_TEMPLATE_DIR"))
-.root.template.file <- file.path(.root.template.dir, "ProjectTemplateRootConfig.dcf")
+.root.template.dir <- function() {
+        if(Sys.getenv("PT_ROOT_TEMPLATE_DIR")=="") 
+                return(Sys.getenv("R_USER"))
+        return(Sys.getenv("PT_ROOT_TEMPLATE_DIR"))
+}
+
+.root.template.file <- function () {
+        file.path(.root.template.dir(), "ProjectTemplateRootConfig.dcf")
+}
 
 # Types of template configuration allowed
 .available.template.types <- c("root", "project")
@@ -186,13 +192,12 @@
 
 # Read a template definition file, validate it and return the contents as a dataframe
 # If no file parameter specified, the function reads the .root.template.file, otherwise
-# another dcf file can be specified which is validated and then saved in place of the
-# current .root.template.file
+# another dcf file can be specified 
 # Note that the definition object is passed to validate and save routines
-.read.root.template <- function (template.file=.root.template.file) {
+.read.root.template <- function (template.file=.root.template.file()) {
         
         .require.root.template()
-        
+           
         # read the file from disk and perform basic validation
         definition <- .read.template.definition(template.file)
         
@@ -202,9 +207,6 @@
         
         # validate the root template
         definition <- .validate.root.template(definition)
-        
-        # Save any validation fixes back
-        .save.root.template(definition)
         
         definition
 }
@@ -245,13 +247,10 @@
 
 
 
-# Check if the root template file exists, if it doesn't create an empty one
+# Check if the root template file exists
 .require.root.template <- function() {
-        if(!file.exists(.root.template.file)) {
-                no_templates <- data.frame(x="")
-                colnames(no_templates) <- .no.templates
-                write.dcf(no_templates, .root.template.file)
-        }
+        if(!file.exists(.root.template.file())) 
+                stop("Custom Templates not defined")
 }
 
 # Provide the status of templates defined in the root template
@@ -375,16 +374,12 @@
 
 
 
-
-
-
-
 .download.github.template <- function (location) {
         
         # location is in format github_user/repo_name@branch
         
-        gh_remote <- devtools:::github_remote(location)
-        file_location <- devtools:::remote_download.github_remote(gh_remote)
+        gh_remote <- devtools::github_remote(location)
+        file_location <- remote_download.github_remote(gh_remote)
         
         # get a temporary directory to unzip the downloaded file
         file_directory <- tempfile("github")
@@ -404,3 +399,55 @@
 }
 
 
+# the code below is cut and paste from devtools because it is not exported from
+# that package.  
+
+remote_download.github_remote <- function(x, quiet = FALSE) {
+        dest <- tempfile(fileext = paste0(".zip"))
+        
+        if (missing_protocol <- !grepl("^[^:]+?://", x$host)) {
+                x$host <- paste0("https://", x$host)
+        }
+        
+        src_root <- paste0(x$host, "/repos/", x$username, "/", x$repo)
+        src <- paste0(src_root, "/zipball/", x$ref)
+        
+        if (!quiet) {
+                message("Downloading GitHub repo ", x$username, "/", x$repo, "@", x$ref,
+                        "\nfrom URL ", src)
+        }
+        
+        if (!is.null(x$auth_token)) {
+                auth <- httr::authenticate(
+                        user = x$auth_token,
+                        password = "x-oauth-basic",
+                        type = "basic"
+                )
+        } else {
+                auth <- NULL
+        }
+        
+        if (github_has_remotes(x, auth))
+                warning("GitHub repo contains submodules, may not function as expected!",
+                        call. = FALSE)
+        
+        download_github(dest, src, auth)
+}
+
+github_has_remotes <- function(x, auth = NULL) {
+        src_root <- paste0(x$host, "/repos/", x$username, "/", x$repo)
+        src_submodules <- paste0(src_root, "/contents/.gitmodules?ref=", x$ref)
+        response <- httr::HEAD(src_submodules, , auth)
+        identical(httr::status_code(response), 200L)
+}
+
+download_github <- function(path, url, ...) {
+        request <- httr::GET(url, ...)
+        
+        if (httr::status_code(request) >= 400) {
+                stop(github_error(request))
+        }
+        
+        writeBin(httr::content(request, "raw"), path)
+        path
+}

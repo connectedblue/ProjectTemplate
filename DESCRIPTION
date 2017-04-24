@@ -33,6 +33,7 @@ Suggests:
     formatR,
     stringr,
     ggplot2,
+    httr,
     lubridate,
     log4r (>= 0.1-5),
     DBI,

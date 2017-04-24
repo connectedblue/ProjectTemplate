@@ -83,49 +83,9 @@ templates <- function(command = "show", template.name = NULL, location = NULL)
          config ={
                  .root.template.status(full=TRUE)
                  .quietstop()
-         }, 
+         } 
          
-         add ={
-                 if (is.null(location))
-                         stop("Please provide location parameter of the template to add")
-                 if (is.null(template.name)) template.name <- basename(location)
-                 .add.template.location(template.name, location)
-                 
-         },
          
-         remove ={
-                 if (is.null(template.name))
-                         stop("Please provide template name or number to remove")
-                 .remove.template.location(template.name)
-         },
-         
-         setdefault ={
-                  if (is.null(template.name))
-                         stop("Please provide template name or number that you want to make default")
-                 .set.default.template(template.name)
-         },
-         
-         nodefault ={
-                .no.default.template() 
-         },
-         
-         clear ={
-                 .clear.root.template()
-         },
-         
-         backup ={
-                 if (!is.null(location) && dir.exists(location))
-                        .backup.root.template(location)
-                 else
-                        .backup.root.template()
-         },
-         
-         restore ={
-                 if (is.null(location))
-                        .restore.root.template() 
-                 else
-                        .restore.root.template(location)
-         }
   )
         
   .root.template.status()
