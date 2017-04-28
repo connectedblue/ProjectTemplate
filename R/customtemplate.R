@@ -153,6 +153,11 @@
 # get the relevant template by number, name or default (if there is one)
 .get.template <- function (template.name=NULL, default=FALSE) {
         
+        # If PT_ROOT_TEMPLATE_DIR is "NULL" then the templates functionality
+        # is disabled
+        if (Sys.getenv("PT_ROOT_TEMPLATE_DIR")=="NULL")
+                return(NULL)
+        
         # get the template definition
         definition <- .read.root.template()
         
@@ -294,8 +299,20 @@
 
 # Read a template definition file, validate it and return the contents as a dataframe
 .read.template.definition <- function (template.file) {
-        definition <- as.data.frame(read.dcf(template.file), 
+        # read the template file into a list. Note that if any values in the
+        # template file are between back ticks ` ` the code between the ticks
+        # is executed and the value returned.
+         
+        definition <- unlist(translate.dcf(template.file))
+        col_names <- unique(names(definition))
+        
+        # a flat list is returned from the translate.dcf function so this
+        # needs transforming back to a dataframe
+        
+        definition <- as.data.frame(matrix(definition, ncol = length(col_names),
+                                           byrow = TRUE), 
                                     stringsAsFactors = FALSE)
+        names(definition) <- col_names
         
         # return NULL if no templates defined
         if (!.templates.defined(definition)) 

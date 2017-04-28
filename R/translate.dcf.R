@@ -23,10 +23,14 @@
 translate.dcf <- function(filename)
 {
   settings <- read.dcf(filename)
-  settings <- setNames(as.list(as.character(settings)), colnames(settings))
+  
+  # If the dcf file contains multiple records, the names need to be set
+  # correctly for each record
+  settings <- setNames(as.list(as.character(t(settings))), 
+                       rep(colnames(settings), nrow(settings)))
   
   # Check each setting to see if it contains R code
-  for (s in names(settings)) {
+  for (s in 1:length(settings)) {
           value <- settings[[s]]
           r_code <- gsub("^`(.*)`$", "\\1", value)
           if (nchar(r_code) != nchar(value)) {

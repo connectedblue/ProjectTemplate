@@ -1,0 +1,9 @@
+template_type: root
+content_location: github:connectedblue/pt_tests:template1
+template_name: template1
+default: FALSE
+
+template_type: root
+content_location: github:connectedblue/pt_tests:template2
+template_name: Template_2
+default: FALSE
