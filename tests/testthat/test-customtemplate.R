@@ -32,7 +32,7 @@ test_that('adding new templates works correctly ', {
   on.exit(unlink(test_project, recursive = TRUE), add = TRUE)
 
   oldwd <- setwd(test_project)
-  on.exit(setwd(oldwd), add = TRUE)
+  #on.exit(setwd(oldwd), add = TRUE)
   
   # template 1 has a custom config variable called template which is set to 1
   # and a file called readme.md
@@ -49,7 +49,7 @@ test_that('adding new templates works correctly ', {
   on.exit(unlink(test_project2, recursive = TRUE), add = TRUE)
   
   oldwd2 <- setwd(test_project2)
-  on.exit(setwd(oldwd2), add = TRUE)
+  #on.exit(setwd(oldwd2), add = TRUE)
   
   # template 2 has a custom config variable called template which is set to 2
   # and a file called readme.md
@@ -66,7 +66,7 @@ test_that('adding new templates works correctly ', {
   on.exit(unlink(test_project3, recursive = TRUE), add = TRUE)
   
   oldwd3 <- setwd(test_project3)
-  on.exit(setwd(oldwd3), add = TRUE)
+  #on.exit(setwd(oldwd3), add = TRUE)
   
   # template 2 has a custom config variable called template which is set to 2
   # and a file called readme.md
@@ -94,6 +94,7 @@ test_that('adding new templates works correctly ', {
   expect_equal(config1$munging, TRUE)
   expect_true(is.character(config1$libraries))
   
+  setwd(this_dir)
   
   tidy_up()
 })
@@ -119,13 +120,13 @@ test_that('adding templates hosted on github works correctly', {
         on.exit(unlink(test_project, recursive = TRUE), add = TRUE)
         
         oldwd <- setwd(test_project)
-        on.exit(setwd(oldwd), add = TRUE)
+        #on.exit(setwd(oldwd), add = TRUE)
         
         # template 1 has a custom config variable called template which is set to 1
         # and a file called readme.md
         suppressMessages(load.project())
         expect_true(file.exists("readme.md"))
-        expect_equal(config$template, 1)
+        expect_equal(config$template, 11)
         
         
         # Create a project based on template 2
@@ -136,17 +137,18 @@ test_that('adding templates hosted on github works correctly', {
         on.exit(unlink(test_project2, recursive = TRUE), add = TRUE)
         
         oldwd2 <- setwd(test_project2)
-        on.exit(setwd(oldwd2), add = TRUE)
+        #on.exit(setwd(oldwd2), add = TRUE)
         
         # template 2 has a custom config variable called template which is set to 2
         # and a file called readme.md
         suppressMessages(load.project())
         expect_true(file.exists("readme.md"))
-        expect_equal(config$template, 2)
+        expect_equal(config$template, 21)
         
         # be sure that this is the github template
         expect_equal(config$github, "github")
         
+        setwd(this_dir)
         
         tidy_up()
 })
